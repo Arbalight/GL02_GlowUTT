@@ -1,4 +1,4 @@
-gitvar colors = require("colors");
+var colors = require("colors");
 var unsafeRequire = require("./utils/unsafeRequire");
 
 // Pour rendre node un peu plus souple pour l'exercice (ne jamais utiliser ailleurs)
