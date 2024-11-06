@@ -1,5 +1,5 @@
-export var command = {
-    execute: function() {
+export var Command = {
+    check: function() {
         console.log("Vous Pouvez décoller chef !");
     }
 }
