@@ -1,3 +1,6 @@
-export function nrj() {
-    console.log("Bienvenue sur NRJ12 !");
+export var Radio = {
+    check: function(){
+        console.log("je check la radio !");
+        return true
+    }
 }
