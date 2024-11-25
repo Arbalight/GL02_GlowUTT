@@ -38,5 +38,22 @@ cli
         // TODO
     })
 
+    // SPEC 5
+    // command to export sessions of given courses in an iCalendar file.
+    .command('export', 'Export all schedules sessions for given courses in an iCalendar file')
+    .argument('[course..]', 'The name of courses that we follow')
+    .option('-stdt, --start-date', 'The beginning date of the calendar that we want to create',
+        {validator: cli.STRING})
+    .option('-endtn --end-date', 'The last date of the calendar that we want to create',
+        {validator: cli.STRING})
+    .action(({args, logger}) => {
+        // TODO
+    })
+
+    // SPEC 6 - TODO
+    .command('visu', '')
+
+    // SPEC 7 - TODO
+    .command('classement', '')
 
 cli.run();
