@@ -50,10 +50,20 @@ cli
         // TODO
     })
 
-    // SPEC 6 - TODO
-    .command('visu', '')
+    // SPEC 6
+    // command to see diagram of rooms distribution for a given period
+    .command('visu', 'Show diagram to see statistics of rooms distribution for a given period')
+    .argument('<start_date>', 'The beginning date of the data in the diagram')
+    .argument('<end_date>', 'The last date of the data in the diagram')
+    .action(({args, logger}) => {
+        // TODO
+    })
 
-    // SPEC 7 - TODO
-    .command('classement', '')
+    // SPEC 7
+    // command to see diagram to analyse the rooms and their places
+    .command('classement', 'Show diagram to see statistics of number of rooms and theirs places')
+    .action(({args, logger}) => {
+        // TODO
+    })
 
 cli.run();
