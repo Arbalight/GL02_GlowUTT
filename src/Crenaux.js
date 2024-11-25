@@ -31,43 +31,21 @@ class Crenaux{
     }
 
     equivalence(creneau) {
-        if (this.horaire === creneau.horaire && this.ssGroupe === creneau.ssGroupe && this.salle === creneau.salle){
-            return true
-        }
-        else {
-            return false
-        }
+        return this.horaire === creneau.horaire && this.ssGroupe === creneau.ssGroupe && this.salle === creneau.salle;
 
     }
 
     comparerHoraire(creneau){
-        if (this.horaire < creneau.horaire){
-            return true
-        }
-        else {
-            return false
-        }
+        return this.horaire < creneau.horaire;
     }
     comparerSalle(creneau){
-        if (this.salle === creneau.salle){
-            return true
-        }else {
-            return false
-        }
+        return this.salle === creneau.salle;
     }
     comparerSsGroupe(creneau){
-        if (this.ssGroupe() === creneau.ssGroupe){
-            return true
-        }else {
-            return false
-        }
+        return this.ssGroupe() === creneau.ssGroupe;
     }
     comparerCapacitaire(creneau){
-        if (this.capacitaire === creneau.capacitaire){
-            return true
-        }else {
-            return false
-        }
+        return this.capacitaire === creneau.capacitaire;
     }
 
 
