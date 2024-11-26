@@ -1,5 +1,6 @@
 class Session {
     // FIELDS
+    _type = '';
     _capacity = 0;
     _day = '';
     _hStart;
@@ -11,6 +12,7 @@ class Session {
     /**
      * The constructor of the Session class, initialize everything.
      *
+     * @param {string} type - the type of the session
      * @param {int} capacity - the number of places of the session
      * @param {string} day - the day of the session
      * @param {string} hStart - The beginning hour of the session
@@ -18,7 +20,8 @@ class Session {
      * @param {string} subGroup - the subgroup that the session is dedicated
      * @param {string} roomName - the name of the room
      */
-    constructor(capacity, day, hStart, hEnd, subGroup, roomName) {
+    constructor(type, capacity, day, hStart, hEnd, subGroup, roomName) {
+        this.type = type
         this.capacity = capacity;
         this.day = day;
 
@@ -33,6 +36,10 @@ class Session {
 
 
     // GETTERS
+    get type() {
+        return this._type;
+    }
+
     get capacity() {
         return this._capacity;
     }
@@ -59,6 +66,14 @@ class Session {
 
 
     // SETTERS
+    set type(typeValue) {
+        if (typeof typeValue !== 'string') {
+            throw new TypeError('The typeValue parameter has to be a string !');
+        }
+
+        this._type = typeValue;
+    }
+
     set capacity(capacityValue) {
         let capacity;
 
@@ -144,6 +159,19 @@ class Session {
         }
 
         this._room = roomName;
+    }
+
+
+    // PUBLIC METHODS
+    toString() {
+        return `Session: {
+            Type: ${this._type},
+            Capacité: ${this._capacity},
+            Jour: ${this._day},
+            Heure: ${this.hStart.getHours()}:${this.hStart.getMinutes()}-${this.hEnd.getHours()}:${this.hEnd.getMinutes()},
+            Sous-groupe: ${this._subGroup},
+            Salle: ${this._room} 
+        }`;
     }
 }
 
