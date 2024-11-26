@@ -1,4 +1,4 @@
-export default class Session {
+class Session {
     // FIELDS
     _capacity = 0;
     _day = '';
@@ -12,7 +12,7 @@ export default class Session {
      * The constructor of the Session class, initialize everything.
      *
      * @param {int} capacity - the number of places of the session
-     * @param {string} day - the first letter of the day
+     * @param {string} day - the day of the session
      * @param {string} hStart - The beginning hour of the session
      * @param {string} hEnd - The end hour of the session
      * @param {string} subGroup - the subgroup that the session is dedicated
@@ -112,17 +112,39 @@ export default class Session {
     }
 
     set hEnd(hourEndValue) {
-        const hourParsed = parseInt(hourEndValue.split(':')[0], 10);
-        const minutesParsed = parseInt(hourEndValue.split(':')[0], 10);
+        if (typeof hourEndValue === 'string') {
+            const hourInt = parseInt(hourEndValue.split(':')[0], 10);
+            const minutesInt = parseInt(hourEndValue.split(':')[1], 10);
 
-        this._hEnd.setHours(hourParsed, minutesParsed);
+            if (isNaN(hourInt) || isNaN(minutesInt)) {
+                throw new Error('error during the parsing of the hourStartValue parameter !');
+            }
+
+            this._hEnd.setHours(hourInt, minutesInt);
+
+        } else if (hourEndValue instanceof Date) {
+            this._hEnd.setHours(hourEndValue.getHours(), hourEndValue.getMinutes());
+
+        } else {
+            throw new TypeError('The hourEndValue parameter has to be a Date or a string at format : "HH:MM"');
+        }
     }
 
     set subGroup(subGroupValue) {
+        if (typeof subGroupValue !== 'string') {
+            throw new TypeError('The subGroupValue parameter has to be a string !');
+        }
+
         this._subGroup = subGroupValue;
     }
 
     set room(roomName) {
+        if (typeof roomName !== 'string') {
+            throw new TypeError('The roomName parameter has to be a string !');
+        }
+
         this._room = roomName;
     }
 }
+
+module.exports = Session;

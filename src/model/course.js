@@ -1,7 +1,7 @@
-import Session from 'src/model/session.js';
+const Session = require('src/model/session.js');
 
 
-export default class Course {
+class Course {
     /**
      * The constructor of the Course class, initialize everything.
      *
@@ -99,3 +99,5 @@ export default class Course {
         return this._sessions.includes(session);
     }
 }
+
+module.exports = Course;
