@@ -1,55 +1,124 @@
+// Importation des modules nécessaires
+const fs = require('fs');
+const path = require('path');
+const Creneau = require('./Crenaux.js');
 
-
-var VpfParser = function(){
-    // The list of sessions parsed from the input file.
-    this.parsedSessions = [];
-
-    this.symb = ["+", ",", "//"];
-
-    this.errorCount = 0;
-}
-
-// Parser procedure
-// tokenize : tranform the data input into a list
-// <eol> = CRLF
-VpfParser.prototype.tokenize = function(data){
-    var separator = /(\r\n|: )/;
-    data = data.split(separator);
-    data = data.filter((val, idx) => !val.match(separator));
-    return data;
-}
-
-// parse : analyze data by calling the first non terminal rule of the grammar
-VpfParser.prototype.parse = function(data){
-    var tData = this.tokenize(data);
-    this.listSessions(tData);
-}
-
-VpfParser.prototype.listSessions = function(data){
-    this.session(data);
-    this.expect("//", input);
-}
-
-this.session = function(input){
-
-}
-
-VpfParser.prototype.errMsg = function(msg, input){
-    this.errorCount++;
-    console.log("Parsing Error ! on "+input+" -- msg : "+msg);
-}
-
-// Read and return a symbol from input
-VpfParser.prototype.next = function(input){
-    return input.shift()
-}
-
-VpfParser.prototype.expect = function(s, input){
-    if(s === this.next(input)){
-        //console.log("Reckognized! "+s)
-        return true;
-    }else{
-        this.errMsg("symbol "+s+" doesn't match", input);
+// Définition de la classe VpfParser
+class VpfParser {
+    constructor(){
+        // Liste des sessions analysées à partir des fichiers d'entrée.
+        this.parsedSessions = [];
+        this.errorCount = 0;
     }
-    return false;
+
+    // Méthode pour analyser un fichier individuel
+    parseFile(filePath){
+        try {
+            const data = fs.readFileSync(filePath, 'utf8');
+            this.parseData(data);
+        } catch (err) {
+            console.error(`Erreur lors de la lecture du fichier ${filePath}:`, err);
+        }
+    }
+
+    // Méthode pour analyser les données d'un fichier
+    parseData(data){
+        var lines = data.split('\n');
+        var currentSession = null;
+
+        for(var i = 0; i < lines.length; i++){
+            var line = lines[i].trim();
+            if(line.length === 0) continue; // Ignorer les lignes vides
+
+            if(line.startsWith('+')){
+                // Nouvelle session (cours)
+                currentSession = {
+                    nom: line.substring(1).trim(),
+                    creneaux: []
+                };
+                this.parsedSessions.push(currentSession);
+            } else if(line.startsWith('1,')){
+                // Analyser un créneau
+                if(currentSession == null){
+                    this.errMsg("Créneau sans session associée", line);
+                    continue;
+                }
+
+                var match = line.match(/^1,(\w\d),P=(\d+),H=(L|MA|ME|J|V|S)\s+(\d{1,2}:\d{2}-\d{1,2}:\d{2}),F(1|2),S=([A-Z0-9]{4})\/\/$/);
+
+                if(match){
+                    var [
+                        fullMatch,
+                        type,
+                        nombrePlaces,
+                        jour,
+                        horaire,
+                        indexSousGroupe,
+                        salle
+                    ] = match;
+
+                    var [heureDebut, heureFin] = horaire.split('-');
+
+                    // Créer une instance de la classe Creneau
+                    var creneau = new Creneau(
+                        parseInt(nombrePlaces, 10),
+                        jour,
+                        horaire,
+                        `F${indexSousGroupe}`,
+                        salle
+                    );
+
+                    currentSession.creneaux.push(creneau);
+                } else {
+                    this.errMsg("Format de créneau invalide", line);
+                }
+            } else {
+                this.errMsg("Ligne non reconnue", line);
+            }
+        }
+    }
+
+    // Méthode pour afficher les messages d'erreur
+    errMsg(msg, line){
+        this.errorCount++;
+        console.error("Erreur d'analyse sur la ligne : '"+line+"' -- message : "+msg);
+    }
+
+    // Méthode pour analyser les fichiers dans un répertoire et ses sous-répertoires
+    parseDirectory(dir){
+        const files = fs.readdirSync(dir);
+
+        files.forEach((file) => {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+
+            if (stat.isDirectory()) {
+                // Analyser récursivement les sous-répertoires
+                this.parseDirectory(filePath);
+            } else {
+                // Analyser le fichier s'il a l'extension .cru
+                if (path.extname(file) === '.cru') {
+                    this.parseFile(filePath);
+                }
+            }
+        });
+    }
+}
+
+// Exemple d'utilisation :
+
+// Création d'une instance du parser
+const parser = new VpfParser();
+
+// Analyser tous les fichiers dans le répertoire 'data/'
+parser.parseDirectory('data/');
+
+// Affichage des sessions analysées
+console.log(JSON.stringify(parser.parsedSessions, null, 2));
+
+// Affichage du nombre d'erreurs s'il y en a
+if (parser.errorCount > 0) {
+    console.error(`Nombre total d'erreurs : ${parser.errorCount}`);
+} else {
+    console.log("Analyse terminée avec succès sans erreurs.");
 }

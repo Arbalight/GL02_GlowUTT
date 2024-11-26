@@ -109,9 +109,5 @@ class Crenaux{
     comparerCapacitaire(creneau){
         return this.capacitaire === creneau.capacitaire;
     }
-
-
-
-
 }
-
+module.exports = Crenaux;
