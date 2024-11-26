@@ -1,4 +1,4 @@
-const Session = require('src/model/session.js');
+const Session = require('./session.js');
 
 
 class Course {

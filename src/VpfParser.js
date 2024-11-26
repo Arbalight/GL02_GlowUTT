@@ -14,14 +14,21 @@ class VpfParser {
     }
 
     parseDirectory(directoryPath) {
+        console.log(`Parsing directory: ${directoryPath}`);
         const files = fs.readdirSync(directoryPath);
         files.forEach((file) => {
             const filePath = path.join(directoryPath, file);
+            console.log(`Found: ${filePath}`);
             if (fs.lstatSync(filePath).isFile()) {
+                console.log(`Parsing file: ${filePath}`);
                 this.parseFile(filePath);
+            } else if (fs.lstatSync(filePath).isDirectory()) {
+                console.log(`Entering subdirectory: ${filePath}`);
+                this.parseDirectory(filePath); // Récursion pour les sous-dossiers
             }
         });
     }
+
 
     parseData(data) {
         const lines = data.split('\n');
@@ -63,8 +70,8 @@ class VpfParser {
             return null;
         }
 
-        const type = parts[0].trim();
-        const subGroup = parts[1].trim();
+        const type = parts[1].trim();
+        const subGroup = parts[4].trim();
         let capacity = null;
         let day = null;
         let hStart = null;
@@ -113,15 +120,17 @@ class VpfParser {
 
 module.exports = VpfParser;
 
+
 if (require.main === module) {
     const parser = new VpfParser();
-    //parser.parseDirectory('data/');
-    parser.parseFile("data/AB/edt.cru")
+    parser.parseDirectory('data/AB');
+    //parser.parseFile("data/AB/edt.cru")
 
     parser.courses.forEach((course) => {
         console.log(`Cours : ${course.code}`);
         course.sessions.forEach((session) => {
-            console.log(`  Session : ${session.subGroup}, Capacité : ${session.capacity}, Jour : ${session.day}, Heure : ${session.hStart}-${session.hEnd}, Salle : ${session.room}`);
+            console.log(`\t${session.toString()}`);
         });
     });
 }
+
