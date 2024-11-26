@@ -1,124 +1,127 @@
-// Importation des modules nécessaires
 const fs = require('fs');
 const path = require('path');
-const Creneau = require('./Crenaux.js');
+const Session = require('./model/session.js');
+const Course = require('./model/course.js');
 
-// Définition de la classe VpfParser
 class VpfParser {
-    constructor(){
-        // Liste des sessions analysées à partir des fichiers d'entrée.
-        this.parsedSessions = [];
-        this.errorCount = 0;
+    constructor() {
+        this.courses = [];
     }
 
-    // Méthode pour analyser un fichier individuel
-    parseFile(filePath){
-        try {
-            const data = fs.readFileSync(filePath, 'utf8');
-            this.parseData(data);
-        } catch (err) {
-            console.error(`Erreur lors de la lecture du fichier ${filePath}:`, err);
-        }
+    parseFile(filePath) {
+        const data = fs.readFileSync(filePath, 'utf8');
+        this.parseData(data);
     }
 
-    // Méthode pour analyser les données d'un fichier
-    parseData(data){
-        var lines = data.split('\n');
-        var currentSession = null;
-
-        for(var i = 0; i < lines.length; i++){
-            var line = lines[i].trim();
-            if(line.length === 0) continue; // Ignorer les lignes vides
-
-            if(line.startsWith('+')){
-                // Nouvelle session (cours)
-                currentSession = {
-                    nom: line.substring(1).trim(),
-                    creneaux: []
-                };
-                this.parsedSessions.push(currentSession);
-            } else if(line.startsWith('1,')){
-                // Analyser un créneau
-                if(currentSession == null){
-                    this.errMsg("Créneau sans session associée", line);
-                    continue;
-                }
-
-                var match = line.match(/^1,(\w\d),P=(\d+),H=(L|MA|ME|J|V|S)\s+(\d{1,2}:\d{2}-\d{1,2}:\d{2}),F(1|2),S=([A-Z0-9]{4})\/\/$/);
-
-                if(match){
-                    var [
-                        fullMatch,
-                        type,
-                        nombrePlaces,
-                        jour,
-                        horaire,
-                        indexSousGroupe,
-                        salle
-                    ] = match;
-
-                    var [heureDebut, heureFin] = horaire.split('-');
-
-                    // Créer une instance de la classe Creneau
-                    var creneau = new Creneau(
-                        parseInt(nombrePlaces, 10),
-                        jour,
-                        horaire,
-                        `F${indexSousGroupe}`,
-                        salle
-                    );
-
-                    currentSession.creneaux.push(creneau);
-                } else {
-                    this.errMsg("Format de créneau invalide", line);
-                }
-            } else {
-                this.errMsg("Ligne non reconnue", line);
-            }
-        }
-    }
-
-    // Méthode pour afficher les messages d'erreur
-    errMsg(msg, line){
-        this.errorCount++;
-        console.error("Erreur d'analyse sur la ligne : '"+line+"' -- message : "+msg);
-    }
-
-    // Méthode pour analyser les fichiers dans un répertoire et ses sous-répertoires
-    parseDirectory(dir){
-        const files = fs.readdirSync(dir);
-
+    parseDirectory(directoryPath) {
+        const files = fs.readdirSync(directoryPath);
         files.forEach((file) => {
-            const filePath = path.join(dir, file);
-            const stat = fs.statSync(filePath);
-
-            if (stat.isDirectory()) {
-                // Analyser récursivement les sous-répertoires
-                this.parseDirectory(filePath);
-            } else {
-                // Analyser le fichier s'il a l'extension .cru
-                if (path.extname(file) === '.cru') {
-                    this.parseFile(filePath);
-                }
+            const filePath = path.join(directoryPath, file);
+            if (fs.lstatSync(filePath).isFile()) {
+                this.parseFile(filePath);
             }
         });
     }
+
+    parseData(data) {
+        const lines = data.split('\n');
+        let currentCourseCode = null;
+        let currentCourse = null;
+
+        for (let line of lines) {
+            line = line.trim();
+            if (line === '') {
+                continue;
+            }
+
+            if (line.startsWith('+')) {
+                currentCourseCode = line.substring(1).trim();
+                if (currentCourseCode.startsWith('UVUV')) {
+                    currentCourse = null;
+                    continue;
+                }
+
+                currentCourse = new Course();
+                currentCourse.code = currentCourseCode;
+                this.courses.push(currentCourse);
+            } else {
+                const session = this.parseSessionLine(line);
+                if (session && currentCourse) {
+                    currentCourse.addSession(session);
+                }
+            }
+        }
+    }
+
+    parseSessionLine(line) {
+        if (line.endsWith('//')) {
+            line = line.slice(0, -2);
+        }
+
+        const parts = line.split(',');
+        if (parts.length < 3) {
+            return null;
+        }
+
+        const type = parts[0].trim();
+        const subGroup = parts[1].trim();
+        let capacity = null;
+        let day = null;
+        let hStart = null;
+        let hEnd = null;
+        let room = null;
+
+        for (let i = 2; i < parts.length; i++) {
+            const part = parts[i].trim();
+
+            if (part.startsWith('P=')) {
+                capacity = parseInt(part.substring(2), 10);
+            } else if (part.startsWith('H=')) {
+                const rest = part.substring(2).trim();
+                const dayAndTime = rest.split(' ');
+                if (dayAndTime.length >= 2) {
+                    day = this.convertDayToFull(dayAndTime[0]);
+                    const times = dayAndTime[1].split('-');
+                    if (times.length === 2) {
+                        hStart = times[0];
+                        hEnd = times[1];
+                    }
+                }
+            } else if (part.startsWith('S=')) {
+                room = part.substring(2);
+            }
+        }
+
+        if (capacity !== null && day && hStart && hEnd && room) {
+            return new Session(type, capacity, day, hStart, hEnd, subGroup, room);
+        }
+
+        return null;
+    }
+
+    convertDayToFull(dayAbbreviation) {
+        const dayMap = {
+            'L': 'Lundi',
+            'M': 'Mardi',
+            'ME': 'Mercredi',
+            'J': 'Jeudi',
+            'V': 'Vendredi'
+        };
+        return dayMap[dayAbbreviation] || dayAbbreviation;
+    }
 }
 
-// Exemple d'utilisation :
+module.exports = VpfParser;
 
-// Création d'une instance du parser
-const parser = new VpfParser();
+if (require.main === module) {
+    const parser = new VpfParser();
+    //parser.parseDirectory('data/');
+    parser.parseFile("data/AB/edt.cru")
 
-// Analyser tous les fichiers dans le répertoire 'data/'
-parser.parseDirectory('data/');
-
-// Affichage des sessions analysées
-console.log(JSON.stringify(parser.parsedSessions, null, 2));
-
-// Affichage du nombre d'erreurs s'il y en a
-if (parser.errorCount > 0) {
-    console.error(`Nombre total d'erreurs : ${parser.errorCount}`);
-} else {
-    console.log("Analyse terminée avec succès sans erreurs.");
+    parser.courses.forEach((course) => {
+        console.log(`Cours : ${course.code}`);
+        course.sessions.forEach((session) => {
+            console.log(`  Session : ${session.subGroup}, Capacité : ${session.capacity}, Jour : ${session.day}, Heure : ${session.hStart}-${session.hEnd}, Salle : ${session.room}`);
+        });
+    });
 }
