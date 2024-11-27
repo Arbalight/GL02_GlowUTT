@@ -3,134 +3,174 @@ const path = require('path');
 const Session = require('./model/session.js');
 const Course = require('./model/course.js');
 
+/**
+ * VpfParser
+ *
+ * Parses .cru files to extract courses and their sessions, ensuring data integrity.
+ * Supports parsing from files or directories, including subdirectories.
+ */
 class VpfParser {
     constructor() {
+        /**
+         * List of parsed courses.
+         * @type {Array<Course>}
+         */
         this.courses = [];
+
+        /**
+         * Set of unique course codes to prevent duplicates.
+         * @type {Set<string>}
+         */
+        this.courseCodes = new Set();
     }
 
+    /**
+     * Parses a single .cru file.
+     * @param {string} filePath - Path to the .cru file to parse.
+     */
     parseFile(filePath) {
         const data = fs.readFileSync(filePath, 'utf8');
-        this.parseData(data);
+        this._parseData(data);
     }
 
+    /**
+     * Recursively parses all files in a directory and its subdirectories.
+     * @param {string} directoryPath - Path to the directory to parse.
+     */
     parseDirectory(directoryPath) {
         console.log(`Parsing directory: ${directoryPath}`);
-        const files = fs.readdirSync(directoryPath);
-        files.forEach((file) => {
-            const filePath = path.join(directoryPath, file);
-            console.log(`Found: ${filePath}`);
-            if (fs.lstatSync(filePath).isFile()) {
-                console.log(`Parsing file: ${filePath}`);
-                this.parseFile(filePath);
-            } else if (fs.lstatSync(filePath).isDirectory()) {
-                console.log(`Entering subdirectory: ${filePath}`);
-                this.parseDirectory(filePath); // Récursion pour les sous-dossiers
+        const entries = fs.readdirSync(directoryPath);
+
+        entries.forEach((entry) => {
+            const fullPath = path.join(directoryPath, entry);
+            const stats = fs.lstatSync(fullPath);
+
+            if (stats.isFile()) {
+                console.log(`Parsing file: ${fullPath}`);
+                this.parseFile(fullPath);
+            } else if (stats.isDirectory()) {
+                console.log(`Entering subdirectory: ${fullPath}`);
+                this.parseDirectory(fullPath); // Recursive parsing
             }
         });
     }
 
-
-    parseData(data) {
+    /**
+     * Internal method to parse raw data from a file.
+     * Extracts courses and sessions while ensuring no duplicates.
+     * @private
+     * @param {string} data - Raw content of the .cru file.
+     */
+    _parseData(data) {
         const lines = data.split('\n');
-        let currentCourseCode = null;
         let currentCourse = null;
 
-        for (let line of lines) {
+        lines.forEach((line) => {
             line = line.trim();
-            if (line === '') {
-                continue;
-            }
+
+            if (!line) return; // Skip empty lines
 
             if (line.startsWith('+')) {
-                currentCourseCode = line.substring(1).trim();
-                if (currentCourseCode.startsWith('UVUV')) {
+                // Start a new course
+                const courseCode = line.substring(1).trim();
+
+                // Skip courses starting with "UVUV"
+                if (courseCode.startsWith('UVUV')) return;
+
+                // Skip if course already exists
+                if (this.courseCodes.has(courseCode)) {
+                    console.log(`Course "${courseCode}" already exists. Skipping.`);
                     currentCourse = null;
-                    continue;
+                    return;
                 }
 
-                currentCourse = new Course();
-                currentCourse.code = currentCourseCode;
-                this.courses.push(currentCourse);
-            } else {
-                const session = this.parseSessionLine(line);
-                if (session && currentCourse) {
-                    currentCourse.addSession(session);
-                }
+                // Add the course
+                currentCourse = this._addCourse(courseCode);
+            } else if (currentCourse) {
+                // Parse session and add it to the current course
+                const session = this._parseSessionLine(line);
+                if (session) currentCourse.addSession(session);
             }
-        }
+        });
     }
 
-    parseSessionLine(line) {
+    /**
+     * Adds a new course to the list and ensures it is indexed.
+     * @private
+     * @param {string} courseCode - The unique code of the course.
+     * @returns {Course} The newly created course.
+     */
+    _addCourse(courseCode) {
+        const course = new Course();
+        course.code = courseCode;
+        this.courses.push(course);
+        this.courseCodes.add(courseCode);
+        return course;
+    }
+
+    /**
+     * Parses a single line representing a session.
+     * Validates and extracts session details if valid.
+     * @private
+     * @param {string} line - The raw line describing a session.
+     * @returns {Session|null} A Session object if the line is valid, otherwise null.
+     */
+    _parseSessionLine(line) {
         if (line.endsWith('//')) {
             line = line.slice(0, -2);
         }
 
         const parts = line.split(',');
-        if (parts.length < 3) {
-            return null;
-        }
+        if (parts.length < 3) return null;
 
         const type = parts[1].trim();
-        const subGroup = parts[4].trim();
+        const subGroup = parts[4]?.trim() || '';
         let capacity = null;
         let day = null;
         let hStart = null;
         let hEnd = null;
         let room = null;
 
-        for (let i = 2; i < parts.length; i++) {
-            const part = parts[i].trim();
+        parts.forEach((part) => {
+            const trimmedPart = part.trim();
 
-            if (part.startsWith('P=')) {
-                capacity = parseInt(part.substring(2), 10);
-            } else if (part.startsWith('H=')) {
-                const rest = part.substring(2).trim();
-                const dayAndTime = rest.split(' ');
-                if (dayAndTime.length >= 2) {
-                    day = this.convertDayToFull(dayAndTime[0]);
-                    const times = dayAndTime[1].split('-');
-                    if (times.length === 2) {
-                        hStart = times[0];
-                        hEnd = times[1];
-                    }
+            if (trimmedPart.startsWith('P=')) {
+                capacity = parseInt(trimmedPart.substring(2), 10);
+            } else if (trimmedPart.startsWith('H=')) {
+                const [dayPart, timePart] = trimmedPart.substring(2).split(' ');
+
+                if (dayPart) day = this._convertDayToFull(dayPart);
+                if (timePart) {
+                    const [start, end] = timePart.split('-');
+                    hStart = start;
+                    hEnd = end;
                 }
-            } else if (part.startsWith('S=')) {
-                room = part.substring(2);
+            } else if (trimmedPart.startsWith('S=')) {
+                room = trimmedPart.substring(2);
             }
-        }
+        });
 
-        if (capacity !== null && day && hStart && hEnd && room) {
-            return new Session(type, capacity, day, hStart, hEnd, subGroup, room);
-        }
-
-        return null;
+        return capacity && day && hStart && hEnd && room
+            ? new Session(type, capacity, day, hStart, hEnd, subGroup, room)
+            : null;
     }
 
-    convertDayToFull(dayAbbreviation) {
+    /**
+     * Converts abbreviated days into their full names.
+     * @private
+     * @param {string} dayAbbreviation - Abbreviated day (e.g., "L", "M").
+     * @returns {string} Full day name (e.g., "Lundi", "Mardi").
+     */
+    _convertDayToFull(dayAbbreviation) {
         const dayMap = {
             'L': 'Lundi',
             'M': 'Mardi',
             'ME': 'Mercredi',
             'J': 'Jeudi',
-            'V': 'Vendredi'
+            'V': 'Vendredi',
         };
         return dayMap[dayAbbreviation] || dayAbbreviation;
     }
 }
 
 module.exports = VpfParser;
-
-
-if (require.main === module) {
-    const parser = new VpfParser();
-    parser.parseDirectory('data/AB');
-    //parser.parseFile("data/AB/edt.cru")
-
-    parser.courses.forEach((course) => {
-        console.log(`Cours : ${course.code}`);
-        course.sessions.forEach((session) => {
-            console.log(`\t${session.toString()}`);
-        });
-    });
-}
-
