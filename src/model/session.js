@@ -162,16 +162,28 @@ class Session {
     }
 
 
-    // PUBLIC METHODS
+    /**
+     * Returns a formatted string representation of the session.
+     * @returns {string} - A detailed string representation of the session.
+     */
     toString() {
-        return `Session: {
-            Type: ${this._type},
-            Capacité: ${this._capacity},
-            Jour: ${this._day},
-            Heure: ${this.hStart.getHours()}:${this.hStart.getMinutes()}-${this.hEnd.getHours()}:${this.hEnd.getMinutes()},
-            Sous-groupe: ${this._subGroup},
-            Salle: ${this._room} 
-        }`;
+        const formatTime = time => {
+            const hours = time.getHours().toString().padStart(2, '0');
+            const minutes = time.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        };
+
+        return `
+          ------------------------
+          Session Details:
+          ------------------------
+          - Type        : ${this.type}
+          - Capacity    : ${this.capacity}
+          - Day         : ${this.day}
+          - Time        : ${formatTime(this.hStart)} - ${formatTime(this.hEnd)}
+          - Subgroup    : ${this.subGroup || 'None'}
+          - Room        : ${this.room || 'No room assigned'}
+          ------------------------`;
     }
 }
 

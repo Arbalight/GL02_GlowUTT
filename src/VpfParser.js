@@ -38,7 +38,7 @@ class VpfParser {
      * @param {string} directoryPath - Path to the directory to parse.
      */
     parseDirectory(directoryPath) {
-        console.log(`Parsing directory: ${directoryPath}`);
+
         const entries = fs.readdirSync(directoryPath);
 
         entries.forEach((entry) => {
@@ -46,10 +46,8 @@ class VpfParser {
             const stats = fs.lstatSync(fullPath);
 
             if (stats.isFile()) {
-                console.log(`Parsing file: ${fullPath}`);
                 this.parseFile(fullPath);
             } else if (stats.isDirectory()) {
-                console.log(`Entering subdirectory: ${fullPath}`);
                 this.parseDirectory(fullPath); // Recursive parsing
             }
         });
@@ -79,7 +77,6 @@ class VpfParser {
 
                 // Skip if course already exists
                 if (this.courseCodes.has(courseCode)) {
-                    console.log(`Course "${courseCode}" already exists. Skipping.`);
                     currentCourse = null;
                     return;
                 }

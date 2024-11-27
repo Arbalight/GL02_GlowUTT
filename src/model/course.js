@@ -98,6 +98,23 @@ class Course {
     containsSession(session) {
         return this._sessions.includes(session);
     }
+
+    /**
+     * Returns a string representation of the course with its sessions.
+     * @returns {string} - A formatted string representation of the course.
+     */
+    toString() {
+        const sessionDetails = this._sessions.map(session => session.toString()).join('\n');
+        return `
+            =======================
+             Course Information
+            =======================
+            - Total Sessions: ${this.getSessionsCount()}
+            - Sessions:
+            ${sessionDetails || '  No sessions available'}
+            =======================
+        `;
+    }
 }
 
 module.exports = Course;

@@ -1,3 +1,4 @@
+const VpfParser = require("./VpfParser.js");
 const cli = require("@caporal/core").default;
 
 cli
@@ -8,8 +9,32 @@ cli
     // command to show the rooms by session of a given course
     .command('salles', 'display all sessions of the given course with associated rooms')
     .argument('<course>', 'The name of the course')
+    .argument('<directory>', 'The file to check with Vpf parser')
     .action(({args, logger}) => {
-        // TODO
+        const parser = new VpfParser();
+
+        try {
+            // Parse the specified directory
+            logger.info(`Parsing directory: ${args.directory}`);
+            parser.parseDirectory(args.directory);
+
+            // Find the requested course
+            const course = parser.courses.find(
+                c => c.code.toLowerCase() === args.course.toLowerCase()
+            );
+
+            if (!course) {
+                logger.error(`Error: Course "${args.course}" not found.`);
+                return;
+            }
+
+            // Extract and display sessions and rooms
+            logger.info(`Sessions for course "${args.course}":`);
+            console.log(course.sessions.toString());
+        } catch (error) {
+            // Handle parsing or directory errors
+            logger.error(`Failed to parse the directory: ${error.message}`);
+        }
     })
 
     // SPEC 2
