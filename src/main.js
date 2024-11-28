@@ -1,5 +1,7 @@
-const VpfParser = require("./VpfParser.js");
 const cli = require("@caporal/core").default;
+
+const VpfParser = require('./VpfParser.js');
+const cruTools = require('./core/cru_tools.js')
 
 cli
     .version('SRU-software')
@@ -9,32 +11,32 @@ cli
     // command to show the rooms by session of a given course
     .command('salles', 'display all sessions of the given course with associated rooms')
     .argument('<course>', 'The name of the course')
-    .argument('<directory>', 'The file to check with Vpf parser')
     .action(({args, logger}) => {
         const parser = new VpfParser();
 
+        // try to get the data folder
+        let  dataFolder;
         try {
-            // Parse the specified directory
-            logger.info(`Parsing directory: ${args.directory}`);
-            parser.parseDirectory(args.directory);
-
-            // Find the requested course
-            const course = parser.courses.find(
-                c => c.code.toLowerCase() === args.course.toLowerCase()
-            );
-
-            if (!course) {
-                logger.error(`Error: Course "${args.course}" not found.`);
-                return;
-            }
-
-            // Extract and display sessions and rooms
-            logger.info(`Sessions for course "${args.course}":`);
-            console.log(course.sessions.toString());
+            dataFolder = cruTools.findDataFolderFromCourseName(args.course);
         } catch (error) {
-            // Handle parsing or directory errors
-            logger.error(`Failed to parse the directory: ${error.message}`);
+            logger.error(`Impossible to found the course: "${args.course}" in the database !`);
+            process.exit(1);
         }
+
+        parser.parseDirectory(dataFolder);
+
+        // Find the requested course and display the sessions
+        parser.courses.forEach(currentCourse => {
+            if (currentCourse.code.toUpperCase() === args.course.toUpperCase()) {
+                // Extract and display sessions and rooms
+                logger.info(`Sessions for course "${args.course}":`);
+                console.log(currentCourse.sessions.toString());
+                process.exit(0);
+            }
+        });
+
+        // no course found
+        logger.error(`Error: Course "${args.course}" not found.`);
     })
 
     // SPEC 2
@@ -42,7 +44,25 @@ cli
     .command('capacite', 'display the maximum number of seats of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        // TODO
+        const parser = new VpfParser();
+        parser.parseDirectory('data');
+
+        // get all sessions with the given room
+        const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
+        if (roomSessions.length === 0) {
+            logger.error(`No room found with the given name : "${args.roomName}"`);
+            process.exit(1);
+        }
+
+        // find room max capacity
+        let maxCapacity = 0;
+        roomSessions.forEach(currentSession => {
+            if (currentSession.capacity > maxCapacity) {
+                maxCapacity = currentSession.capacity;
+            }
+        });
+
+        console.log(`The maximum capacity in the database of the "${args.roomName}" room is : ${maxCapacity}`);
     })
 
     // SPEC 3
