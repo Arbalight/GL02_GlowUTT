@@ -17,7 +17,7 @@ cli
         // try to get the data folder
         let  dataFolder;
         try {
-            dataFolder = cruTools.getDataFolderFromCourseName(args.course);
+            dataFolder = cruTools.findDataFolderFromCourseName(args.course);
         } catch (error) {
             logger.error(`Impossible to found the course: "${args.course}" in the database !`);
             process.exit(1);
@@ -44,7 +44,25 @@ cli
     .command('capacite', 'display the maximum number of seats of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        // TODO
+        const parser = new VpfParser();
+        parser.parseDirectory('data');
+
+        // get all sessions with the given room
+        const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
+        if (roomSessions.length === 0) {
+            logger.error(`No room found with the given name : "${args.roomName}"`);
+            process.exit(1);
+        }
+
+        // find room max capacity
+        let maxCapacity = 0;
+        roomSessions.forEach(currentSession => {
+            if (currentSession.capacity > maxCapacity) {
+                maxCapacity = currentSession.capacity;
+            }
+        });
+
+        console.log(`The maximum capacity in the database of the "${args.roomName}" room is : ${maxCapacity}`);
     })
 
     // SPEC 3

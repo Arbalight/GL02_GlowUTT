@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 
-function getDataFolderFromCourseName(courseName) {
+function findDataFolderFromCourseName(courseName) {
     let dataPath = 'data/';
 
     if (typeof courseName !== 'string') {
@@ -28,6 +28,27 @@ function getDataFolderFromCourseName(courseName) {
 }
 
 
+function findAllSessionsFromRoom(courses, room_name) {
+    if (typeof courses !== 'object') {
+        throw new TypeError('The courses parameter has to be an object array !');
+    } else if (typeof room_name !== 'string') {
+        room_name = String(room_name);
+    }
+
+    let roomSessions = [];
+    courses.forEach(currentCourse => {
+        currentCourse.sessions.forEach(currentSession => {
+            if (currentSession.room.toUpperCase() === room_name.toUpperCase()) {
+                roomSessions.push(currentSession);
+            }
+        });
+    });
+
+    return roomSessions;
+}
+
+
 module.exports = {
-    getDataFolderFromCourseName
+    findDataFolderFromCourseName,
+    findAllSessionsFromRoom
 };
