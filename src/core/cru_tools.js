@@ -27,6 +27,22 @@ function findDataFolderFromCourseName(courseName) {
     return dataPath;
 }
 
+function findAllSessionsFromCourse(courses, course_name) {
+    if (typeof courses !== 'object') {
+        throw new TypeError('The courses parameter has to be an object array !');
+    } else if (typeof course_name !== 'string') {
+        course_name = String(course_name);
+    }
+
+    let courseSessions = [];
+    courses.forEach(currentCourse => {
+        if (currentCourse.code.toUpperCase() === course_name.toUpperCase()) {
+            courseSessions = currentCourse.sessions;
+        }
+    });
+    return courseSessions;
+}
+
 
 function findAllSessionsFromRoom(courses, room_name) {
     if (typeof courses !== 'object') {
@@ -50,5 +66,6 @@ function findAllSessionsFromRoom(courses, room_name) {
 
 module.exports = {
     findDataFolderFromCourseName,
-    findAllSessionsFromRoom
+    findAllSessionsFromRoom,
+    findAllSessionsFromCourse
 };
