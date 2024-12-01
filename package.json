@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@caporal/core": "^3.0.2"
+    "@caporal/core": "^3.0.2",
+    "ical-generator": "^8.0.1"
   }
 }
