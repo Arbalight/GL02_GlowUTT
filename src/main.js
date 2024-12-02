@@ -92,9 +92,9 @@ cli
     .option('-endtn, --end-date <endDate>', 'The end date of the calendar', { validator: cli.STRING })
     .action(({ args, logger, options }) => {
         const parser = new VpfParser();
-        parser.parseDirectory('data'); // Répertoire contenant les données
+        parser.parseDirectory('data'); // Directory containing the data
 
-        // Récupérer les cours et options utilisateur
+        // Retrieve courses and user options
         const courses = args.course.length > 0 ? args.course : [];
         const startDate = options.startDate || null;
         const endDate = options.endDate || null;
@@ -104,7 +104,7 @@ cli
             process.exit(1);
         }
 
-        // Filtrer les cours et leurs sessions
+        // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
 
         if (filteredCourses.length === 0) {
@@ -112,12 +112,12 @@ cli
             process.exit(0);
         }
 
-        // Créer un composant iCalendar
+        // Create an iCalendar component
         const calendar = new ical.Component(['vcalendar', [], []]);
         calendar.updatePropertyWithValue('version', '2.0');
         calendar.updatePropertyWithValue('prodid', '-//My Course Export//EN');
 
-        // Ajouter les sessions filtrées comme événements
+        // Add filtered sessions as events
         filteredCourses.forEach(course => {
             course.sessions.forEach(session => {
                 const event = new ical.Component('vevent');
@@ -141,8 +141,8 @@ cli
             });
         });
 
-        // Exporter le fichier iCalendar
-        // Trouver le dossier Téléchargements
+        // Export the iCalendar file
+        // Find the Downloads folder
         const downloadsDir = path.join(os.homedir(), 'Downloads');
         const fileName = path.join(downloadsDir, 'courses.ics');
 

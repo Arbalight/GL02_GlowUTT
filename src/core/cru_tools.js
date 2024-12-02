@@ -44,23 +44,23 @@ function findAllSessionsFromCourse(courses, course_name) {
 }
 
 /**
- * Filtre les sessions en fonction des cours donnés et des plages de dates,
- * et retourne une liste de cours avec uniquement les sessions correspondantes.
+ * Filters sessions based on the given courses and date ranges,
+ * and returns a list of courses with only the corresponding sessions.
  *
- * @param {Array<Course>} courses - Liste des cours disponibles.
- * @param {Array<string>} selectedCourses - Codes des cours à filtrer (vide pour tout inclure).
- * @param {string|null} start - Jour de début ("Lundi", "Mardi", etc.).
- * @param {string|null} end - Jour de fin ("Lundi", "Mardi", etc.).
- * @returns {Array<Object>} - Liste des cours avec leurs sessions filtrées.
+ * @param {Array<Course>} courses - List of available courses.
+ * @param {Array<string>} selectedCourses - Course codes to filter (empty to include all).
+ * @param {string|null} start - Start day ("Monday", "Tuesday", etc.).
+ * @param {string|null} end - End day ("Monday", "Tuesday", etc.).
+ * @returns {Array<Object>} - List of courses with their filtered sessions.
  */
 function filterSessionsByCoursesAndDates(courses, selectedCourses, start, end) {
-    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     if (start === null || end === null) {
         throw new Error('Please provide both start and end days');
     }
 
-    // Obtenir les indices des jours start et end
+    // Get the indices of the start and end days
     const startIndex = days.indexOf(start);
     const endIndex = days.indexOf(end);
 
@@ -68,15 +68,15 @@ function filterSessionsByCoursesAndDates(courses, selectedCourses, start, end) {
         throw new Error('Invalid start or end day');
     }
 
-    // Déterminer les jours compris entre start et end (y compris start et end)
+    // Determine the days included between start and end (including start and end)
     const includedDays = [];
     if (startIndex <= endIndex) {
-        // Cas où les jours sont dans le même ordre dans la semaine
+        // Case where the days are in the same order in the week
         for (let i = startIndex; i <= endIndex; i++) {
             includedDays.push(days[i]);
         }
     } else {
-        // Cas où end est avant start (semaine en boucle)
+        // Case where end is before start (week wraps around)
         for (let i = startIndex; i < days.length; i++) {
             includedDays.push(days[i]);
         }
@@ -85,12 +85,12 @@ function filterSessionsByCoursesAndDates(courses, selectedCourses, start, end) {
         }
     }
 
-    // Filtrer les cours sélectionnés (ou prendre tous les cours si la liste est vide)
+    // Filter the selected courses (or take all courses if the list is empty)
     const filteredCourses = courses.filter(course =>
         selectedCourses.length === 0 || selectedCourses.includes(course.code)
     );
 
-    // Construire une nouvelle liste de cours avec leurs sessions filtrées
+    // Construct a new list of courses with their filtered sessions
     const result = filteredCourses.map(course => {
         const filteredSessions = course.sessions.filter(session =>
             includedDays.includes(session.day)
@@ -103,10 +103,8 @@ function filterSessionsByCoursesAndDates(courses, selectedCourses, start, end) {
         };
     });
 
-    return result.filter(course => course.sessions.length > 0); // Retirer les cours sans sessions
+    return result.filter(course => course.sessions.length > 0); // Remove courses without sessions
 }
-
-
 
 function findAllSessionsFromRoom(courses, room_name) {
     if (typeof courses !== 'object') {
