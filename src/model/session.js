@@ -161,6 +161,16 @@ class Session {
         this._room = roomName;
     }
 
+    toICalEvent() {
+        return {
+            uid: `${this.day}-${this.hStart.toISOString()}-${this.room}`,
+            summary: this.type,
+            dtstart: this.hStart.toISOString(),
+            dtend: this.hEnd.toISOString(),
+            location: this.room,
+            description: `Session Type: ${this.type}, SubGroup: ${this.subGroup || 'None'}`,
+        };
+    };
 
     /**
      * Returns a formatted string representation of the session.

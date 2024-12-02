@@ -1,7 +1,12 @@
 const cli = require("@caporal/core").default;
 
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+
 const VpfParser = require('./VpfParser.js');
-const cruTools = require('./core/cru_tools.js')
+const cruTools = require('./core/cru_tools.js');
+const ical = require('ical.js');
 
 cli
     .version('SRU-software')
@@ -15,14 +20,14 @@ cli
         const parser = new VpfParser();
         parser.parseDirectory('data');
 
-        const roomSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
-        if (roomSessions.length === 0) {
+        const courseSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
+        if (courseSessions.length === 0) {
             logger.error(`No sessions found with the given name : "${args.course}"`);
             process.exit(1);
         }
 
         console.log(`Sessions of the course "${args.course}" :`);
-        roomSessions.forEach(currentSession => {
+        courseSessions.forEach(currentSession => {
             console.log(`${currentSession.toString()}`);
         });
     })
@@ -81,15 +86,71 @@ cli
 
     // SPEC 5
     // command to export sessions of given courses in an iCalendar file.
-    .command('export', 'Export all schedules sessions for given courses in an iCalendar file')
-    .argument('[course..]', 'The name of courses that we follow')
-    .option('-stdt, --start-date', 'The beginning date of the calendar that we want to create',
-        {validator: cli.STRING})
-    .option('-endtn --end-date', 'The last date of the calendar that we want to create',
-        {validator: cli.STRING})
-    .action(({args, logger}) => {
-        // TODO
+    .command('export', 'Export all scheduled sessions for given courses in an iCalendar file')
+    .argument('[course..]', 'The name of courses to export')
+    .option('-stdt, --start-date <startDate>', 'The start date of the calendar', { validator: cli.STRING })
+    .option('-endtn, --end-date <endDate>', 'The end date of the calendar', { validator: cli.STRING })
+    .action(({ args, logger, options }) => {
+        const parser = new VpfParser();
+        parser.parseDirectory('data'); // Répertoire contenant les données
+
+        // Récupérer les cours et options utilisateur
+        const courses = args.course.length > 0 ? args.course : [];
+        const startDate = options.startDate || null;
+        const endDate = options.endDate || null;
+
+        if (startDate === null || endDate === null || courses.length === 0) {
+            logger.error('Please provide both start and end dates.');
+            process.exit(1);
+        }
+
+        // Filtrer les cours et leurs sessions
+        const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
+
+        if (filteredCourses.length === 0) {
+            logger.warn('No sessions found for the given criteria.');
+            process.exit(0);
+        }
+
+        // Créer un composant iCalendar
+        const calendar = new ical.Component(['vcalendar', [], []]);
+        calendar.updatePropertyWithValue('version', '2.0');
+        calendar.updatePropertyWithValue('prodid', '-//My Course Export//EN');
+
+        // Ajouter les sessions filtrées comme événements
+        filteredCourses.forEach(course => {
+            course.sessions.forEach(session => {
+                const event = new ical.Component('vevent');
+                const eventData = {
+                    uid: `${session.day}-${session.hStart.toISOString()}-${session.room}`,
+                    summary: `${course.code} - ${session.type}`,
+                    dtstart: session.hStart.toISOString(),
+                    dtend: session.hEnd.toISOString(),
+                    location: session.room,
+                    description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}`
+                };
+
+                event.updatePropertyWithValue('uid', eventData.uid);
+                event.updatePropertyWithValue('summary', eventData.summary);
+                event.updatePropertyWithValue('dtstart', eventData.dtstart);
+                event.updatePropertyWithValue('dtend', eventData.dtend);
+                event.updatePropertyWithValue('location', eventData.location);
+                event.updatePropertyWithValue('description', eventData.description);
+
+                calendar.addSubcomponent(event);
+            });
+        });
+
+        // Exporter le fichier iCalendar
+        // Trouver le dossier Téléchargements
+        const downloadsDir = path.join(os.homedir(), 'Downloads');
+        const fileName = path.join(downloadsDir, 'courses.ics');
+
+        fs.writeFileSync(fileName, calendar.toString());
+        logger.info(`iCalendar file "${fileName}" successfully created!`);
     })
+
+
 
     // SPEC 6
     // command to see diagram of rooms distribution for a given period
