@@ -157,51 +157,23 @@ cli
         calendar.updatePropertyWithValue('version', '2.0');
         calendar.updatePropertyWithValue('prodid', '-//My Course Export//EN');
 
-        // Add filtered sessions as events
         filteredCourses.forEach(course => {
             course.sessions.forEach(session => {
                 const event = new ical.Component('vevent');
 
                 try {
-                    // Parse hStart as a Date object
                     const startDate = new Date(session.hStart);
-                    if (isNaN(startDate.getTime())) {
-                        throw new Error(`Invalid hStart value for session: ${session.hStart}`);
-                    }
+                    const endDate = new Date(session.hEnd);
 
-                    // Parse hEnd as a Date object or adjust the time on startDate
-                    let endDate;
-                    if (typeof session.hEnd === 'string') {
-                        // If hEnd is a string, split it into hours and minutes
-                        const [hours, minutes] = session.hEnd.split(':').map(value => parseInt(value, 10));
-                        if (isNaN(hours) || isNaN(minutes)) {
-                            throw new Error(`Invalid time values extracted from hEnd: ${session.hEnd}`);
-                        }
-
-                        endDate = new Date(startDate);
-                        endDate.setHours(hours, minutes, 0, 0);
-                    } else if (session.hEnd instanceof Date) {
-                        // If hEnd is already a Date object
-                        endDate = new Date(session.hEnd);
-                    } else {
-                        throw new Error(`Invalid hEnd format for session: ${session.hEnd}`);
-                    }
-
-                    const eventData = {
-                        uid: `${session.day}-${startDate.toISOString()}-${session.room}`,
-                        summary: `${course.code} - ${session.type}`,
-                        dtstart: startDate.toISOString(),
-                        dtend: endDate.toISOString(),
-                        location: session.room,
-                        description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}, Day: ${session.day}`
-                    };
-
-                    event.updatePropertyWithValue('uid', eventData.uid);
-                    event.updatePropertyWithValue('summary', eventData.summary);
-                    event.updatePropertyWithValue('dtstart', eventData.dtstart);
-                    event.updatePropertyWithValue('dtend', eventData.dtend);
-                    event.updatePropertyWithValue('location', eventData.location);
-                    event.updatePropertyWithValue('description', eventData.description);
+                    event.updatePropertyWithValue('UID', `${session.day}-${startDate.toISOString()}-${session.room}`);
+                    event.updatePropertyWithValue('DTSTAMP', new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
+                    event.updatePropertyWithValue('DTSTART', startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
+                    event.updatePropertyWithValue('DTEND', endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
+                    event.updatePropertyWithValue('SUMMARY', `${course.code} - ${session.type}`);
+                    event.updatePropertyWithValue('LOCATION', session.room);
+                    event.updatePropertyWithValue('DESCRIPTION', `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}, Day: ${session.day}`);
+                    event.updatePropertyWithValue('CLASS', 'PUBLIC');
+                    event.updatePropertyWithValue('STATUS', 'CONFIRMED');
 
                     calendar.addSubcomponent(event);
                 } catch (error) {
