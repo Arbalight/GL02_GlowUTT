@@ -54,36 +54,7 @@ function findAllSessionsFromCourse(courses, course_name) {
  * @returns {Array<Object>} - List of courses with their filtered sessions.
  */
 function filterSessionsByCoursesAndDates(courses, selectedCourses, start, end) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-    if (start === null || end === null) {
-        throw new Error('Please provide both start and end days');
-    }
-
-    // Get the indices of the start and end days
-    const startIndex = days.indexOf(start);
-    const endIndex = days.indexOf(end);
-
-    if (startIndex === -1 || endIndex === -1) {
-        throw new Error('Invalid start or end day');
-    }
-
-    // Determine the days included between start and end (including start and end)
-    const includedDays = [];
-    if (startIndex <= endIndex) {
-        // Case where the days are in the same order in the week
-        for (let i = startIndex; i <= endIndex; i++) {
-            includedDays.push(days[i]);
-        }
-    } else {
-        // Case where end is before start (week wraps around)
-        for (let i = startIndex; i < days.length; i++) {
-            includedDays.push(days[i]);
-        }
-        for (let i = 0; i <= endIndex; i++) {
-            includedDays.push(days[i]);
-        }
-    }
+    const includedDays = findDateBetween(start, end);
 
     // Filter the selected courses (or take all courses if the list is empty)
     const filteredCourses = courses.filter(course =>
@@ -121,14 +92,109 @@ function findAllSessionsFromRoom(courses, room_name) {
             }
         });
     });
-
     return roomSessions;
 }
 
+function findAllSessionsFromDate(courses, start, end){
+    const includedDays = findDateBetween(start, end);
+
+    const result = courses.map(course => {
+        const filteredSessions = course.sessions.filter(session =>
+            includedDays.includes(session.day)
+        );
+
+        return {
+            code: course.code,
+            name: course.name,
+            sessions: filteredSessions
+        };
+    });
+
+    return result.filter(course => course.sessions.length > 0);
+}
+
+function findDateBetween(start, end) {
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+    if (start === null || end === null) {
+        throw new Error('Please provide both start and end days');
+    }
+
+    // Get the indices of the start and end days
+    const startIndex = days.indexOf(start);
+    const endIndex = days.indexOf(end);
+
+    if (startIndex === -1 || endIndex === -1) {
+        throw new Error('Invalid start or end day');
+    }
+
+    // Determine the days included between start and end (including start and end)
+    const includedDays = [];
+    if (startIndex <= endIndex) {
+        // Case where the days are in the same order in the week
+        for (let i = startIndex; i <= endIndex; i++) {
+            includedDays.push(days[i]);
+        }
+    } else {
+        // Case where end is before start (week wraps around)
+        for (let i = startIndex; i < days.length; i++) {
+            includedDays.push(days[i]);
+        }
+        for (let i = 0; i <= endIndex; i++) {
+            includedDays.push(days[i]);
+        }
+    }
+    return includedDays;
+}
+
+function getRoomsCount(courses){
+    let rooms = new Set();
+    courses.forEach(course => {
+        course.sessions.forEach(session => {
+            rooms.add(session.room);
+        });
+    });
+    return rooms.size;
+}
+
+function getDateForDay(dayAbbreviation, startTime) {
+    const dayMap = {
+        'Lundi': 1,
+        'Mardi': 2,
+        'Mercredi': 3,
+        'Jeudi': 4,
+        'Vendredi': 5,
+        'Samedi': 6,
+        'Dimanche': 0
+    };
+
+    const targetDay = dayMap[dayAbbreviation];
+    if (targetDay === undefined) {
+        throw new Error(`Unknown day abbreviation: ${dayAbbreviation}`);
+    }
+
+    // Obtenir la date d'aujourd'hui
+    const today = new Date();
+    const todayDay = today.getDay();
+
+    let difference = targetDay - todayDay;
+    if (difference < 0) {
+        difference += 7;
+    }
+
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + difference);
+
+
+    return targetDate;
+}
 
 module.exports = {
     findDataFolderFromCourseName,
+    getRoomsCount,
+    getDateForDay,
     findAllSessionsFromRoom,
     findAllSessionsFromCourse,
-    filterSessionsByCoursesAndDates
+    filterSessionsByCoursesAndDates,
+    findAllSessionsFromDate
 };

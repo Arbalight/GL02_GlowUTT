@@ -121,13 +121,19 @@ cli
         filteredCourses.forEach(course => {
             course.sessions.forEach(session => {
                 const event = new ical.Component('vevent');
+
+                // Convertir le jour de session et l'heure en une date réelle
+                const startDate = cruTools.getDateForDay(session.day, session.hStart);
+                const endDate = new Date(startDate);
+
+
                 const eventData = {
-                    uid: `${session.day}-${session.hStart.toISOString()}-${session.room}`,
+                    uid: `${session.day}-${startDate.toISOString()}-${session.room}`,
                     summary: `${course.code} - ${session.type}`,
-                    dtstart: session.hStart.toISOString(),
-                    dtend: session.hEnd.toISOString(),
+                    dtstart: startDate.toISOString(),
+                    dtend: endDate.toISOString(),
                     location: session.room,
-                    description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}`
+                    description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}, Day: ${session.day}`
                 };
 
                 event.updatePropertyWithValue('uid', eventData.uid);
@@ -155,10 +161,48 @@ cli
     // SPEC 6
     // command to see diagram of rooms distribution for a given period
     .command('visu', 'Show diagram to see statistics of rooms distribution for a given period')
-    .argument('<start_date>', 'The beginning date of the data in the diagram')
-    .argument('<end_date>', 'The last date of the data in the diagram')
-    .action(({args, logger}) => {
-        // TODO
+    .argument('<startDate>', 'The beginning date of the data in the diagram')
+    .argument('<endDate>', 'The last date of the data in the diagram')
+    .action(({ args, logger }) => {
+        const parser = new VpfParser();
+        parser.parseDirectory('data/AB');
+
+        const startDate = args.startDate || null;
+        const endDate = args.endDate || null;
+
+
+        if (!startDate || !endDate) {
+            logger.error('Both start_date and end_date must be provided.');
+            process.exit(1);
+        }
+
+        const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
+
+        if (filteredCourses.length === 0) {
+            logger.warn('No data found for the given period.');
+            process.exit(0);
+        }
+
+
+        // Calculer le taux d'occupation par salle
+        const roomUsage = {};
+        filteredCourses.forEach(course => {
+            course.sessions.forEach(session => {
+                const room = session.room || 'Unknown';
+                if (!roomUsage[room]) {
+                    roomUsage[room] = { used: 0, total: 0 };
+                }
+                roomUsage[room].used += 1;
+            });
+        });
+
+        const totalSlots = Object.keys(roomUsage).reduce((sum, room) => {
+            roomUsage[room].total = roomUsage[room].used;
+            return sum + roomUsage[room].total;
+        }, 0);
+
+
+
     })
 
     // SPEC 7
