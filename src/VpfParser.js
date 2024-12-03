@@ -165,6 +165,8 @@ class VpfParser {
             'ME': 'Mercredi',
             'J': 'Jeudi',
             'V': 'Vendredi',
+            'S': 'Samedi',
+            'D': 'Dimanche'
         };
         return dayMap[dayAbbreviation] || dayAbbreviation;
     }

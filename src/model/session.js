@@ -110,40 +110,81 @@ class Session {
     set hStart(hourStartValue) {
         if (typeof hourStartValue === 'string') {
             const hourInt = parseInt(hourStartValue.split(':')[0], 10);
-            const minutesInt = parseInt(hourStartValue.split(':')[1], 10)
+            const minutesInt = parseInt(hourStartValue.split(':')[1], 10);
 
             if (isNaN(hourInt) || isNaN(minutesInt)) {
-                throw new Error('error during the parsing of the hourStartValue parameter !');
+                throw new Error('Error during the parsing of the hourStartValue parameter!');
             }
 
+            this._hStart = this._createDateForDay(this._day);
             this._hStart.setHours(hourInt, minutesInt);
 
         } else if (hourStartValue instanceof Date) {
+            this._hStart = this._createDateForDay(this._day);
             this._hStart.setHours(hourStartValue.getHours(), hourStartValue.getMinutes());
 
         } else {
-            throw new TypeError('The hourStartValue parameter has to be a Date or a string at format : "HH:MM"');
+            throw new TypeError('The hourStartValue parameter must be a Date or a string in the format "HH:MM"');
         }
     }
 
     set hEnd(hourEndValue) {
+        if (!this.day) {
+            throw new Error('Day must be set before setting hEnd!');
+        }
+
         if (typeof hourEndValue === 'string') {
             const hourInt = parseInt(hourEndValue.split(':')[0], 10);
             const minutesInt = parseInt(hourEndValue.split(':')[1], 10);
 
             if (isNaN(hourInt) || isNaN(minutesInt)) {
-                throw new Error('error during the parsing of the hourStartValue parameter !');
+                throw new Error('Error during the parsing of the hourEndValue parameter!');
             }
 
+            this._hEnd = this._createDateForDay(this.day);
             this._hEnd.setHours(hourInt, minutesInt);
 
         } else if (hourEndValue instanceof Date) {
+            this._hEnd = this._createDateForDay(this.day);
             this._hEnd.setHours(hourEndValue.getHours(), hourEndValue.getMinutes());
 
         } else {
-            throw new TypeError('The hourEndValue parameter has to be a Date or a string at format : "HH:MM"');
+            throw new TypeError('The hourEndValue parameter must be a Date or a string in the format "HH:MM"');
         }
     }
+
+    // Helper method to calculate the date for the given day of the week
+    _createDateForDay(day) {
+        console.log(day);
+        const dayMap = {
+            'Lundi': 1,
+            'Mardi': 2,
+            'Mercredi': 3,
+            'Jeudi': 4,
+            'Vendredi': 5,
+            'Samedi': 6,
+            'Dimanche': 0
+        };
+
+        const targetDay = dayMap[day];
+        console.log(targetDay);
+
+
+        const today = new Date();
+        const todayDay = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+        let difference = targetDay - todayDay;
+        if (difference < 0) {
+            difference += 7; // Move to the next occurrence of the target day
+        }
+
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + difference);
+        targetDate.setHours(0, 0, 0, 0); // Reset time to midnight
+
+        return targetDate;
+    }
+
 
     set subGroup(subGroupValue) {
         if (typeof subGroupValue !== 'string') {

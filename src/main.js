@@ -122,30 +122,54 @@ cli
             course.sessions.forEach(session => {
                 const event = new ical.Component('vevent');
 
-                // Convertir le jour de session et l'heure en une date réelle
-                const startDate = cruTools.getDateForDay(session.day, session.hStart);
-                const endDate = new Date(startDate);
+                try {
+                    // Parse hStart as a Date object
+                    const startDate = new Date(session.hStart);
+                    if (isNaN(startDate.getTime())) {
+                        throw new Error(`Invalid hStart value for session: ${session.hStart}`);
+                    }
 
+                    // Parse hEnd as a Date object or adjust the time on startDate
+                    let endDate;
+                    if (typeof session.hEnd === 'string') {
+                        // If hEnd is a string, split it into hours and minutes
+                        const [hours, minutes] = session.hEnd.split(':').map(value => parseInt(value, 10));
+                        if (isNaN(hours) || isNaN(minutes)) {
+                            throw new Error(`Invalid time values extracted from hEnd: ${session.hEnd}`);
+                        }
 
-                const eventData = {
-                    uid: `${session.day}-${startDate.toISOString()}-${session.room}`,
-                    summary: `${course.code} - ${session.type}`,
-                    dtstart: startDate.toISOString(),
-                    dtend: endDate.toISOString(),
-                    location: session.room,
-                    description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}, Day: ${session.day}`
-                };
+                        endDate = new Date(startDate);
+                        endDate.setHours(hours, minutes, 0, 0);
+                    } else if (session.hEnd instanceof Date) {
+                        // If hEnd is already a Date object
+                        endDate = new Date(session.hEnd);
+                    } else {
+                        throw new Error(`Invalid hEnd format for session: ${session.hEnd}`);
+                    }
 
-                event.updatePropertyWithValue('uid', eventData.uid);
-                event.updatePropertyWithValue('summary', eventData.summary);
-                event.updatePropertyWithValue('dtstart', eventData.dtstart);
-                event.updatePropertyWithValue('dtend', eventData.dtend);
-                event.updatePropertyWithValue('location', eventData.location);
-                event.updatePropertyWithValue('description', eventData.description);
+                    const eventData = {
+                        uid: `${session.day}-${startDate.toISOString()}-${session.room}`,
+                        summary: `${course.code} - ${session.type}`,
+                        dtstart: startDate.toISOString(),
+                        dtend: endDate.toISOString(),
+                        location: session.room,
+                        description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}, Day: ${session.day}`
+                    };
 
-                calendar.addSubcomponent(event);
+                    event.updatePropertyWithValue('uid', eventData.uid);
+                    event.updatePropertyWithValue('summary', eventData.summary);
+                    event.updatePropertyWithValue('dtstart', eventData.dtstart);
+                    event.updatePropertyWithValue('dtend', eventData.dtend);
+                    event.updatePropertyWithValue('location', eventData.location);
+                    event.updatePropertyWithValue('description', eventData.description);
+
+                    calendar.addSubcomponent(event);
+                } catch (error) {
+                    console.error(`Error processing session for course ${course.code}:`, error.message);
+                }
             });
         });
+
 
         // Export the iCalendar file
         // Find the Downloads folder
