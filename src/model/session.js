@@ -155,7 +155,6 @@ class Session {
 
     // Helper method to calculate the date for the given day of the week
     _createDateForDay(day) {
-        console.log(day);
         const dayMap = {
             'Lundi': 1,
             'Mardi': 2,
@@ -167,7 +166,6 @@ class Session {
         };
 
         const targetDay = dayMap[day];
-        console.log(targetDay);
 
 
         const today = new Date();
