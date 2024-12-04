@@ -80,7 +80,21 @@ cli
     .option('-t, --time', 'Session start and end times following this format : HH:MM;HH:MM',
         {validator: cli.STRING})
     .action(({args, options, logger}) => {
-        // TODO
+        const parser = new VpfParser();
+        parser.parseDirectory('data');
+
+        let timestamp;
+        let rooms;
+        if ('time' in options) {
+            timestamp = options.time;
+            rooms = cruTools.findRoomsForADate(parser.courses, args.day, options.time);
+        } else {
+            timestamp = 'all time';
+            rooms = cruTools.findRoomsForADate(parser.courses, args.day);
+        }
+
+        console.log(`All rooms unreserved the ${args.day} at ${timestamp} :`);
+        console.log(rooms);
     })
 
     // SPEC 5
