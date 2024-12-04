@@ -205,7 +205,42 @@ cli
     // command to see diagram to analyse the rooms and their places
     .command('classement', 'Show diagram to see statistics of number of rooms and theirs places')
     .action(({args, logger}) => {
-        // TODO
+        var parser = new VpfParser();
+        parser.parseDirectory('data');
+        const courses = parser.courses;
+
+        if(courses.length === 0){
+            logger.error('No data found in the database');
+            process.exit(1);
+        }
+
+        var rooms = {};
+        courses.forEach(course => {
+            course.sessions.forEach(session => {
+                if (!rooms[session.room]) {
+                    rooms[session.room] = session.capacity;
+                } else {
+                    rooms[session.room] = Math.max(rooms[session.room], session.capacity);
+                }
+            });
+        });
+
+        var sortedRooms = Object.keys(rooms).sort((a, b) => rooms[a] - rooms[b]);
+        console.log('Rooms sorted by capacity: ');
+
+        var lastCapacity = rooms[sortedRooms[0]];
+        var count = 0;
+        sortedRooms.forEach(room => {
+            if (rooms[room] !== lastCapacity) {
+                console.log(`${lastCapacity} places: ${count} rooms`);
+                //console.log(`- ${room}`);
+                lastCapacity = rooms[room];
+                count = 1;
+            } else {
+                count++;
+            }
+        });
+
     })
 
 cli.run();
