@@ -1,7 +1,12 @@
 const cli = require("@caporal/core").default;
 
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+
 const VpfParser = require('./VpfParser.js');
-const cruTools = require('./core/cru_tools.js')
+const cruTools = require('./core/cru_tools.js');
+const ical = require('ical.js');
 
 cli
     .version('SRU-software')
@@ -25,18 +30,16 @@ cli
 
         parser.parseDirectory(dataFolder);
 
-        // Find the requested course and display the sessions
-        parser.courses.forEach(currentCourse => {
-            if (currentCourse.code.toUpperCase() === args.course.toUpperCase()) {
-                // Extract and display sessions and rooms
-                logger.info(`Sessions for course "${args.course}":`);
-                console.log(currentCourse.sessions.toString());
-                process.exit(0);
-            }
-        });
+        const courseSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
+        if (courseSessions.length === 0) {
+            logger.error(`No sessions found with the given name : "${args.course}"`);
+            process.exit(1);
+        }
 
-        // no course found
-        logger.error(`Error: Course "${args.course}" not found.`);
+        console.log(`Sessions of the course "${args.course}" :`);
+        courseSessions.forEach(currentSession => {
+            console.log(`${currentSession.toString()}`);
+        });
     })
 
     // SPEC 2
@@ -123,23 +126,147 @@ cli
 
     // SPEC 5
     // command to export sessions of given courses in an iCalendar file.
-    .command('export', 'Export all schedules sessions for given courses in an iCalendar file')
-    .argument('[course..]', 'The name of courses that we follow')
-    .option('-stdt, --start-date', 'The beginning date of the calendar that we want to create',
-        {validator: cli.STRING})
-    .option('-endtn --end-date', 'The last date of the calendar that we want to create',
-        {validator: cli.STRING})
-    .action(({args, logger}) => {
-        // TODO
+    .command('export', 'Export all scheduled sessions for given courses in an iCalendar file')
+    .argument('[course..]', 'The name of courses to export')
+    .option('-stdt, --start-date <startDate>', 'The start date of the calendar', { validator: cli.STRING })
+    .option('-endtn, --end-date <endDate>', 'The end date of the calendar', { validator: cli.STRING })
+    .action(({ args, logger, options }) => {
+        const parser = new VpfParser();
+        parser.parseDirectory('data'); // Directory containing the data
+
+        // Retrieve courses and user options
+        const courses = args.course.length > 0 ? args.course : [];
+        const startDate = options.startDate || null;
+        const endDate = options.endDate || null;
+
+        if (startDate === null || endDate === null || courses.length === 0) {
+            logger.error('Please provide both start and end dates.');
+            process.exit(1);
+        }
+
+        // Filter courses and their sessions
+        const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
+
+        if (filteredCourses.length === 0) {
+            logger.warn('No sessions found for the given criteria.');
+            process.exit(0);
+        }
+
+        // Create an iCalendar component
+        const calendar = new ical.Component(['vcalendar', [], []]);
+        calendar.updatePropertyWithValue('version', '2.0');
+        calendar.updatePropertyWithValue('prodid', '-//My Course Export//EN');
+
+        // Add filtered sessions as events
+        filteredCourses.forEach(course => {
+            course.sessions.forEach(session => {
+                const event = new ical.Component('vevent');
+
+                try {
+                    // Parse hStart as a Date object
+                    const startDate = new Date(session.hStart);
+                    if (isNaN(startDate.getTime())) {
+                        throw new Error(`Invalid hStart value for session: ${session.hStart}`);
+                    }
+
+                    // Parse hEnd as a Date object or adjust the time on startDate
+                    let endDate;
+                    if (typeof session.hEnd === 'string') {
+                        // If hEnd is a string, split it into hours and minutes
+                        const [hours, minutes] = session.hEnd.split(':').map(value => parseInt(value, 10));
+                        if (isNaN(hours) || isNaN(minutes)) {
+                            throw new Error(`Invalid time values extracted from hEnd: ${session.hEnd}`);
+                        }
+
+                        endDate = new Date(startDate);
+                        endDate.setHours(hours, minutes, 0, 0);
+                    } else if (session.hEnd instanceof Date) {
+                        // If hEnd is already a Date object
+                        endDate = new Date(session.hEnd);
+                    } else {
+                        throw new Error(`Invalid hEnd format for session: ${session.hEnd}`);
+                    }
+
+                    const eventData = {
+                        uid: `${session.day}-${startDate.toISOString()}-${session.room}`,
+                        summary: `${course.code} - ${session.type}`,
+                        dtstart: startDate.toISOString(),
+                        dtend: endDate.toISOString(),
+                        location: session.room,
+                        description: `Type: ${session.type}, Subgroup: ${session.subGroup || 'None'}, Day: ${session.day}`
+                    };
+
+                    event.updatePropertyWithValue('uid', eventData.uid);
+                    event.updatePropertyWithValue('summary', eventData.summary);
+                    event.updatePropertyWithValue('dtstart', eventData.dtstart);
+                    event.updatePropertyWithValue('dtend', eventData.dtend);
+                    event.updatePropertyWithValue('location', eventData.location);
+                    event.updatePropertyWithValue('description', eventData.description);
+
+                    calendar.addSubcomponent(event);
+                } catch (error) {
+                    console.error(`Error processing session for course ${course.code}:`, error.message);
+                }
+            });
+        });
+
+
+        // Export the iCalendar file
+        // Find the Downloads folder
+        const downloadsDir = path.join(os.homedir(), 'Downloads');
+        const fileName = path.join(downloadsDir, 'courses.ics');
+
+        fs.writeFileSync(fileName, calendar.toString());
+        logger.info(`iCalendar file "${fileName}" successfully created!`);
     })
+
+
 
     // SPEC 6
     // command to see diagram of rooms distribution for a given period
     .command('visu', 'Show diagram to see statistics of rooms distribution for a given period')
-    .argument('<start_date>', 'The beginning date of the data in the diagram')
-    .argument('<end_date>', 'The last date of the data in the diagram')
-    .action(({args, logger}) => {
-        // TODO
+    .argument('<startDate>', 'The beginning date of the data in the diagram')
+    .argument('<endDate>', 'The last date of the data in the diagram')
+    .action(({ args, logger }) => {
+        const parser = new VpfParser();
+        parser.parseDirectory('data/AB');
+
+        const startDate = args.startDate || null;
+        const endDate = args.endDate || null;
+
+
+        if (!startDate || !endDate) {
+            logger.error('Both start_date and end_date must be provided.');
+            process.exit(1);
+        }
+
+        const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
+
+        if (filteredCourses.length === 0) {
+            logger.warn('No data found for the given period.');
+            process.exit(0);
+        }
+
+
+        // Calculer le taux d'occupation par salle
+        const roomUsage = {};
+        filteredCourses.forEach(course => {
+            course.sessions.forEach(session => {
+                const room = session.room || 'Unknown';
+                if (!roomUsage[room]) {
+                    roomUsage[room] = { used: 0, total: 0 };
+                }
+                roomUsage[room].used += 1;
+            });
+        });
+
+        const totalSlots = Object.keys(roomUsage).reduce((sum, room) => {
+            roomUsage[room].total = roomUsage[room].used;
+            return sum + roomUsage[room].total;
+        }, 0);
+
+
+
     })
 
     // SPEC 7

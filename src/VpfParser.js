@@ -161,10 +161,12 @@ class VpfParser {
     _convertDayToFull(dayAbbreviation) {
         const dayMap = {
             'L': 'Lundi',
-            'M': 'Mardi',
+            'MA': 'Mardi',
             'ME': 'Mercredi',
             'J': 'Jeudi',
             'V': 'Vendredi',
+            'S': 'Samedi',
+            'D': 'Dimanche'
         };
         return dayMap[dayAbbreviation] || dayAbbreviation;
     }
