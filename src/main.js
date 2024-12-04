@@ -70,7 +70,31 @@ cli
     .command('dispo_salle', 'display all free slots of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        // TODO
+        const parser = new VpfParser();
+        parser.parseDirectory('data');
+
+        const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
+        if (roomSessions.length === 0) {
+            logger.error(`No room found with the given name : "${args.roomName}"`);
+            process.exit(1);
+        }
+
+        const dates = cruTools.findDatesForRoom(roomSessions, args.roomName);
+
+        // function to print all intervals of one day
+        const prettyPrintIntervals = (intervals) => {
+            intervals.forEach(([start, end], index) => {
+                const formatTime = ([hours, minutes]) =>
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                console.log(`\tInterval ${index + 1}: ${formatTime(start)} - ${formatTime(end)}`);
+            });
+        }
+
+        console.log(`All free slots for the "${args.roomName}" room :`);
+        for (let day in dates) {
+            console.log(`- ${day} :`);
+            prettyPrintIntervals(dates[day]);
+        }
     })
 
     // SPEC 4
@@ -87,10 +111,10 @@ cli
         let rooms;
         if ('time' in options) {
             timestamp = options.time;
-            rooms = cruTools.findRoomsForADate(parser.courses, args.day, options.time);
+            rooms = cruTools.findRoomsForDate(parser.courses, args.day, options.time);
         } else {
             timestamp = 'all time';
-            rooms = cruTools.findRoomsForADate(parser.courses, args.day);
+            rooms = cruTools.findRoomsForDate(parser.courses, args.day);
         }
 
         console.log(`All rooms unreserved the ${args.day} at ${timestamp} :`);

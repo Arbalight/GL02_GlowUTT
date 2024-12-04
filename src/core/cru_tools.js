@@ -49,7 +49,7 @@ function findAllSessionsFromRoom(courses, room_name) {
 }
 
 
-function findRoomsForADate(courses, day, timestamp = '') {
+function findRoomsForDate(courses, day, timestamp = '') {
     if (typeof day !== 'string') {
         throw new TypeError('The day parameter has to be a string !');
     } else if (typeof timestamp !== 'string') {
@@ -82,6 +82,29 @@ function findRoomsForADate(courses, day, timestamp = '') {
     roomsAvailable = roomsAvailable.filter(room => !roomsUnavailable.includes(room));
 
     return roomsAvailable;
+}
+
+function findDatesForRoom(roomSessions, room_name) {
+    let dates = {
+        'Lundi': [[0, 0], [23, 59]],
+        'Mardi': [[0, 0], [23, 59]],
+        'Mercredi': [[0, 0], [23, 59]],
+        'Jeudi': [[0, 0], [23, 59]],
+        'Vendredi': [[0, 0], [23, 59]]
+    };
+
+    const allTimestamps = roomSessions.map(value => {
+        return [
+            [value.hStart.getHours(), value.hStart.getMinutes()],
+            [value.hEnd.getHours(), value.hEnd.getMinutes()]
+        ];
+    })
+
+    for (let day in dates) {
+        dates[day] = removeOverlaps(allTimestamps);
+    }
+
+    return dates;
 }
 
 function parseTimestamp(timestamp) {
@@ -128,8 +151,46 @@ function compareTimestamp(session, timestamp) {
 }
 
 
+function removeOverlaps(timestamps) {
+    const dayInterval = [[0, 0], [23, 59]];
+
+    // functions to convert timestamp into minutes and inverse
+    const toMinutes = ([hours, minutes]) => hours * 60 + minutes;
+    const toTimestamp = (minutes) => [Math.floor(minutes / 60), minutes % 60];
+
+    // initialize dayInterval into minutes
+    let result = [[toMinutes(dayInterval[0]), toMinutes(dayInterval[1])]];
+
+    timestamps.forEach(interval => {
+        const intervalStart = toMinutes(interval[0]);
+        const intervalEnd = toMinutes(interval[1]);
+        let updatedResult = [];
+
+        result.forEach(([start, end]) => {
+            if (intervalEnd <= start || intervalStart >= end) {
+                updatedResult.push([start, end]);
+
+            } else {
+                if (intervalStart > start) {
+                    updatedResult.push([start, intervalStart]);
+                }
+                if (intervalEnd < end) {
+                    updatedResult.push([intervalEnd, end]);
+                }
+            }
+        });
+
+        result = updatedResult;
+    });
+
+    // Convert all minutes interval into timestamp
+    return result.map(([start, end]) => [toTimestamp(start), toTimestamp(end)]);
+}
+
+
 module.exports = {
     findDataFolderFromCourseName,
     findAllSessionsFromRoom,
-    findRoomsForADate
+    findRoomsForDate,
+    findDatesForRoom
 };
