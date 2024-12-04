@@ -226,7 +226,7 @@ cli
             course.sessions.forEach(session => {
                 const room = session.room || 'Unknown';
                 if (!roomUsage[room]) {
-                    roomUsage[room] = { used: 0, total: 0 };
+                    roomUsage[room] = {used: 0, total: 0};
                 }
                 roomUsage[room].used += 1;
             });
@@ -236,10 +236,40 @@ cli
             roomUsage[room].total = roomUsage[room].used;
             return sum + roomUsage[room].total;
         }, 0);
+        console.log(filteredCourses)
+
+        let txOccupation = [];
+        filteredCourses.forEach(course => {
+            course.sessions.forEach(session => {
+                const room = session.room || 'unknown';
+
+                txOccupation.push(roomUsage / totalSlots * 100);
+
+            })
 
 
+        })
 
+        console.log( txOccupation);
+
+        const specVegaLite = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+            "description": "Graphique du taux d'occupation par salle",
+            "data": { "values": txOccupation },
+            "mark": "bar",
+            "encoding": {
+                "x": { "field": "salle", "type": "nominal", "axis": { "labelAngle": -45 } },
+                "y": { "field": "valeur", "type": "quantitative" }
+            }
+        };
+        fs.writeFile(fichierSortie, JSON.stringify(specVegaLite, null, 2), err => {
+            if (err) {
+                console.error("❌ Erreur lors de l'écriture du fichier JSON Vega-Lite :", err);
+            } else {
+                console.log(`✅ Fichier Vega-Lite JSON généré : ${fichierSortie}`);}
+            })
     })
+
 
     // SPEC 7
     // command to see diagram to analyse the rooms and their places
