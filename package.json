@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@caporal/core": "^3.1.5",
+    "fs": "^0.0.1-security",
     "ical.js": "^2.1.0"
   }
 }
