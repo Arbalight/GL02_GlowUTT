@@ -36,18 +36,28 @@ class VpfParser {
     /**
      * Recursively parses all files in a directory and its subdirectories.
      * @param {string} directoryPath - Path to the directory to parse.
+     * @param {boolean} alreadyChangePath [optional] - To know if we already change the path if we didn't find the path.
      */
-    parseDirectory(directoryPath) {
+    parseDirectory(directoryPath, alreadyChangePath = false) {
+        let entries;
 
-        const entries = fs.readdirSync(directoryPath);
+        try {
+            entries = fs.readdirSync(directoryPath);
+        } catch (error) {
+            if (!alreadyChangePath) {
+                const newPath = path.join(path.dirname(process.argv[1]).slice(0, -4), directoryPath);
+                return this.parseDirectory(newPath, true);
+            } else {
+                throw error;
+            }
+        }
 
         entries.forEach((entry) => {
             const fullPath = path.join(directoryPath, entry);
-            const stats = fs.lstatSync(fullPath);
 
-            if (stats.isFile()) {
+            if (path.extname(fullPath).length > 0) { // is a file
                 this.parseFile(fullPath);
-            } else if (stats.isDirectory()) {
+            } else {
                 this.parseDirectory(fullPath); // Recursive parsing
             }
         });
