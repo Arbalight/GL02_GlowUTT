@@ -225,6 +225,16 @@ function findRoomsForDate(courses, day, timestamp = '') {
     return roomsAvailable;
 }
 
+function getRoomsSet(courses) {
+    let rooms = new Set();
+    courses.forEach(course => {
+        course.sessions.forEach(session => {
+            rooms.add(session.room);
+        });
+    });
+    return rooms;
+}
+
 function findDatesForRoom(roomSessions, room_name) {
     let dates = {
         'Lundi': [[0, 0], [23, 59]],
@@ -331,6 +341,7 @@ function removeOverlaps(timestamps) {
 
 module.exports = {
     findDataFolderFromCourseName,
+    getRoomsSet,
     findAllSessionsFromRoom,
     findRoomsForDate,
     findDatesForRoom,
