@@ -192,36 +192,30 @@ cli
         logger.info(`iCalendar file "${fileName}" successfully created!`);
     })
 
-
-
     // SPEC 6
     // command to see diagram of rooms distribution for a given period
     .command('visu', 'Show diagram to see statistics of rooms distribution for a given period')
     .argument('<start_day>', 'The first day of the data in the diagram')
     .argument('<end_day>', 'The last day of the data in the diagram')
     .action(({ args, logger }) => {
-        // check dates arguments
         const startDate = args.startDay || null;
         const endDate = args.endDay || null;
+
         if (!startDate || !endDate) {
             logger.error('Both start_date and end_date must be provided.');
             process.exit(1);
         }
 
-        // parse data
         const parser = new VpfParser();
         parser.parseDirectory('data');
-
-        // get courses between the period depending the given arguments
         const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
+
         if (filteredCourses.length === 0) {
             logger.warn('No data found for the given period.');
             process.exit(0);
         }
 
-        // compute the percentage of rooms distribution
-        const roomUsage = {}
-
+        const roomUsage = {};
         filteredCourses.forEach(course => {
             course.sessions.forEach(session => {
                 if (session.room in roomUsage) {
@@ -243,13 +237,59 @@ cli
             }
         });
 
+        // Prepare data for Vega-Lite
+        const chartData = Object.entries(roomUsage).map(([room, usage]) => ({
+            room,
+            usage
+        }));
 
-        console.log(roomUsage);
-        // TODO - vegalite
+        const spec = {
+            $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+            description: 'Room Usage Distribution Over a Period',
+            width: 800,
+            height: 400,
+            data: {
+                values: chartData
+            },
+            mark: 'bar',
+            encoding: {
+                x: { field: 'room', type: 'ordinal', axis: { title: 'Room Names' } },
+                y: { field: 'usage', type: 'quantitative', axis: { title: 'Usage Rate' } },
+                tooltip: [{ field: 'room' }, { field: 'usage', format: '.2%' }]
+            }
+        };
+
+        // Generate HTML file
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Room Usage Chart</title>
+            <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+            <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+            <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+        </head>
+        <body>
+            <div id="chart"></div>
+            <script>
+                const spec = ${JSON.stringify(spec)};
+                vegaEmbed('#chart', spec).catch(console.error);
+            </script>
+        </body>
+        </html>`;
+
+        const downloadsDir = path.join(os.homedir(), 'Downloads');
+        const fileName = path.join(downloadsDir, 'room_usage_chart.html');
+
+        fs.writeFileSync(fileName, htmlContent);
+        logger.info('Chart saved as room_usage_chart.html');
     })
 
 
-    // SPEC 7
+
+// SPEC 7
     // command to see diagram to analyse the rooms and their places
     .command('classement', 'Show diagram to see statistics of number of rooms and theirs places')
     .action(({args, logger}) => {
