@@ -197,45 +197,55 @@ cli
     // SPEC 6
     // command to see diagram of rooms distribution for a given period
     .command('visu', 'Show diagram to see statistics of rooms distribution for a given period')
-    .argument('<startDate>', 'The beginning date of the data in the diagram')
-    .argument('<endDate>', 'The last date of the data in the diagram')
+    .argument('<start_day>', 'The first day of the data in the diagram')
+    .argument('<end_day>', 'The last day of the data in the diagram')
     .action(({ args, logger }) => {
-        const parser = new VpfParser();
-        parser.parseDirectory('data/AB');
-
-        const startDate = args.startDate || null;
-        const endDate = args.endDate || null;
-
-
+        // check dates arguments
+        const startDate = args.startDay || null;
+        const endDate = args.endDay || null;
         if (!startDate || !endDate) {
             logger.error('Both start_date and end_date must be provided.');
             process.exit(1);
         }
 
-        const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
+        // parse data
+        const parser = new VpfParser();
+        parser.parseDirectory('data');
 
+        // get courses between the period depending the given arguments
+        const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
         if (filteredCourses.length === 0) {
             logger.warn('No data found for the given period.');
             process.exit(0);
         }
 
-
-        const rooms = cruTools.getRoomsSet(filteredCourses);
-
+        // compute the percentage of rooms distribution
         const roomUsage = {}
+
         filteredCourses.forEach(course => {
             course.sessions.forEach(session => {
-                if (!roomUsage[session.room]) {
-                    roomUsage[session.room] = 1;
-                } else {
+                if (session.room in roomUsage) {
                     roomUsage[session.room] += 1;
+                } else {
+                    roomUsage[session.room] = 1;
                 }
             });
         });
 
-        
+        for (let [key, value] of Object.entries(roomUsage)) {
+            roomUsage[key] = value / filteredCourses.length;
+        }
+
+        const rooms = cruTools.getRoomsSet(parser.courses);
+        rooms.forEach(room => {
+            if (!(room in roomUsage)) {
+                roomUsage[room] = 0;
+            }
+        });
 
 
+        console.log(roomUsage);
+        // TODO - vegalite
     })
 
 
