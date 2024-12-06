@@ -1,7 +1,13 @@
 {
   "dependencies": {
-    "@caporal/core": "^3.1.5",
+    "@caporal/core": "^3.0.2",
     "fs": "^0.0.1-security",
     "ical.js": "^2.1.0"
+  },
+  "devDependencies": {
+    "jasmine": "^3.6.3"
+  },
+  "scripts": {
+    "test": "jasmine"
   }
 }
