@@ -128,16 +128,16 @@ cli
     // command to export sessions of given courses in an iCalendar file.
     .command('export', 'Export all scheduled sessions for given courses in an iCalendar file')
     .argument('[course..]', 'The name of courses to export')
-    .option('-stdt, --start-date <startDate>', 'The start date of the calendar', { validator: cli.STRING })
-    .option('-endtn, --end-date <endDate>', 'The end date of the calendar', { validator: cli.STRING })
+    .argument('stdt', 'The start date of the calendar', { validator: cli.STRING })
+    .argument('endtn', 'The end date of the calendar', { validator: cli.STRING })
     .action(({ args, logger, options }) => {
         const parser = new VpfParser();
         parser.parseDirectory('data'); // Directory containing the data
 
         // Retrieve courses and user options
         const courses = args.course.length > 0 ? args.course : [];
-        const startDate = options.startDate || null;
-        const endDate = options.endDate || null;
+        const startDate = args.stdt;
+        const endDate = args.endtn;
 
         if (startDate === null || endDate === null || courses.length === 0) {
             logger.error('Please provide both start and end dates.');
