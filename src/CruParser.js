@@ -4,12 +4,12 @@ const Session = require('./model/session.js');
 const Course = require('./model/course.js');
 
 /**
- * VpfParser
+ * CruParser
  *
  * Parses .cru files to extract courses and their sessions, ensuring data integrity.
  * Supports parsing from files or directories, including subdirectories.
  */
-class VpfParser {
+class CruParser {
     constructor() {
         /**
          * List of parsed courses.
@@ -182,4 +182,4 @@ class VpfParser {
     }
 }
 
-module.exports = VpfParser;
+module.exports = CruParser;
