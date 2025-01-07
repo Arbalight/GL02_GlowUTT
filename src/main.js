@@ -4,7 +4,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 
-const VpfParser = require('./VpfParser.js');
+const CruParser = require('./CruParser.js');
 const cruTools = require('./core/cru_tools.js');
 const ical = require('ical.js');
 
@@ -17,7 +17,7 @@ cli
     .command('salles', 'display all sessions of the given course with associated rooms')
     .argument('<course>', 'The name of the course')
     .action(({args, logger}) => {
-        const parser = new VpfParser();
+        const parser = new CruParser();
 
         // try to get the data folder
         let  dataFolder;
@@ -47,7 +47,7 @@ cli
     .command('capacite', 'display the maximum number of seats of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        const parser = new VpfParser();
+        const parser = new CruParser();
         parser.parseDirectory('data');
 
         // get all sessions with the given room
@@ -73,7 +73,7 @@ cli
     .command('dispo_salle', 'display all free slots of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        const parser = new VpfParser();
+        const parser = new CruParser();
         parser.parseDirectory('data');
 
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
@@ -107,7 +107,7 @@ cli
     .option('-t, --time', 'Session start and end times following this format : HH:MM;HH:MM',
         {validator: cli.STRING})
     .action(({args, options, logger}) => {
-        const parser = new VpfParser();
+        const parser = new CruParser();
         parser.parseDirectory('data');
 
         let timestamp;
@@ -131,7 +131,7 @@ cli
     .argument('stdt', 'The start date of the calendar', { validator: cli.STRING })
     .argument('endtn', 'The end date of the calendar', { validator: cli.STRING })
     .action(({ args, logger, options }) => {
-        const parser = new VpfParser();
+        const parser = new CruParser();
         parser.parseDirectory('data'); // Directory containing the data
 
         // Retrieve courses and user options
@@ -206,7 +206,7 @@ cli
             process.exit(1);
         }
 
-        const parser = new VpfParser();
+        const parser = new CruParser();
         parser.parseDirectory('data');
         const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
 
@@ -293,7 +293,7 @@ cli
     // command to see diagram to analyse the rooms and their places
     .command('classement', 'Show diagram to see statistics of number of rooms and theirs places')
     .action(({args, logger}) => {
-        var parser = new VpfParser();
+        var parser = new CruParser();
         parser.parseDirectory('data');
         const courses = parser.courses;
 
