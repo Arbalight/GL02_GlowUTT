@@ -59,7 +59,7 @@ cli
             }
         });
 
-        console.log(`The maximum capacity in the database of the "${args.roomName}" room is : ${maxCapacity}`);
+        logger.info(`The maximum capacity in the database of the "${args.roomName}" room is : ${maxCapacity}`);
     })
 
     // SPEC 3
