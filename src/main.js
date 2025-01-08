@@ -138,6 +138,7 @@ cli
         const endDate = args.endtn;
 
         //Check if the courses exist
+        const allCourses = parser.courses;
         const allCourseCodes = parser.courses.map(course => course.code);
         const missingCourses = courses.filter(course => !allCourseCodes.includes(course));
 
