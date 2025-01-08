@@ -31,10 +31,7 @@ cli
         parser.parseDirectory(dataFolder);
 
         const courseSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
-        if (courseSessions.length === 0) {
-            logger.error(`No sessions found with the given name : "${args.course}"`);
-            process.exit(1);
-        }
+        verifTaille(courseSessions.length, args.course, logger);
 
         console.log(`Sessions of the course "${args.course}" :`);
         courseSessions.forEach(currentSession => {
@@ -52,10 +49,7 @@ cli
 
         // get all sessions with the given room
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
-        if (roomSessions.length === 0) {
-            logger.error(`No room found with the given name : "${args.roomName}"`);
-            process.exit(1);
-        }
+        verifTaille(roomSessions.length, args.roomName, logger);
 
         // find room max capacity
         let maxCapacity = 0;
@@ -77,10 +71,7 @@ cli
         parser.parseDirectory('data');
 
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
-        if (roomSessions.length === 0) {
-            logger.error(`No room found with the given name : "${args.roomName}"`);
-            process.exit(1);
-        }
+        verifTaille(roomSessions.length, args.roomName, logger);
 
         const dates = cruTools.findDatesForRoom(roomSessions, args.roomName);
 
@@ -138,19 +129,12 @@ cli
         const courses = args.course.length > 0 ? args.course : [];
         const startDate = args.stdt;
         const endDate = args.endtn;
-
-        if (startDate === null || endDate === null || courses.length === 0) {
-            logger.error('Please provide both start and end dates.');
-            process.exit(1);
-        }
+        
 
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
 
-        if (filteredCourses.length === 0) {
-            logger.warn('No sessions found for the given criteria.');
-            process.exit(0);
-        }
+        verifTaille(filteredCourses.length, args.course, logger);
 
         // Create an iCalendar component
         const calendar = new ical.Component(['vcalendar', [], []]);
@@ -210,10 +194,7 @@ cli
         parser.parseDirectory('data');
         const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
 
-        if (filteredCourses.length === 0) {
-            logger.warn('No data found for the given period.');
-            process.exit(0);
-        }
+        verifTaille(filteredCourses.length, null, logger);
 
         const roomUsage = {};
         filteredCourses.forEach(course => {
@@ -297,10 +278,8 @@ cli
         parser.parseDirectory('data');
         const courses = parser.courses;
 
-        if(courses.length === 0){
-            logger.error('No data found in the database');
-            process.exit(1);
-        }
+         
+        verifTaille(courses.length, null, logger);
 
         var rooms = {};
         courses.forEach(course => {
@@ -332,3 +311,14 @@ cli
     })
 
 cli.run();
+
+function verifTaille(tailleListe, name, logger){
+    if (tailleListe === 0) {
+        if(name != null){
+        logger.error(`Not found with the given name : "${name}"`);}
+        else{
+        logger.error('No data found in the database');
+        }
+        process.exit(1);
+    }
+}
