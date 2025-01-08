@@ -101,6 +101,13 @@ cli
         const parser = new CruParser();
         parser.parseDirectory('data');
 
+        const validDays = ['Lundi','lundi','Mardi','mardi','Mercredi','mercredi','Jeudi','jeudi','Vendredi','vendredi','Samedi','samedi','Dimanche','dimanche'];
+        
+        if (!validDays.includes(args.day)) {
+            logger.error(`Invalid day provided: "${args.day}". Please enter a valid day (e.g., Lundi, mardi).`);
+            return;
+        }
+
         let timestamp;
         let rooms;
         if ('time' in options) {
