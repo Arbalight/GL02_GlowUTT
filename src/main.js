@@ -136,7 +136,15 @@ cli
         const courses = args.course.length > 0 ? args.course : [];
         const startDate = args.stdt;
         const endDate = args.endtn;
-        
+
+        //Check if the courses exist
+        const allCourseCodes = parser.courses.map(course => course.code);
+        const missingCourses = courses.filter(course => !allCourseCodes.includes(course));
+
+        if (missingCourses.length > 0) {
+            logger.error(`These courses were not found: ${missingCourses.join(', ')}. Export failed.`);
+            return;
+        }
 
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
