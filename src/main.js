@@ -8,6 +8,12 @@ const CruParser = require('./CruParser.js');
 const cruTools = require('./core/cru_tools.js');
 const ical = require('ical.js');
 
+function initializeParser(directory = 'data') {
+    const parser = new CruParser();
+    parser.parseDirectory(directory);
+    return parser;
+}
+
 cli
     .version('SRU-software')
     .version('0.01')
@@ -17,7 +23,8 @@ cli
     .command('salles', 'display all sessions of the given course with associated rooms')
     .argument('<course>', 'The name of the course')
     .action(({args, logger}) => {
-        const parser = new CruParser();
+        // const parser = new CruParser();
+        const parser = initializeParser();
 
         // try to get the data folder
         let  dataFolder;
@@ -28,7 +35,7 @@ cli
             process.exit(1);
         }
 
-        parser.parseDirectory(dataFolder);
+        //parser.parseDirectory(dataFolder);
 
         const courseSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
         verifTaille(courseSessions.length, args.course, logger);
@@ -44,8 +51,7 @@ cli
     .command('capacite', 'display the maximum number of seats of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        const parser = new CruParser();
-        parser.parseDirectory('data');
+        const parser = initializeParser();
 
         // get all sessions with the given room
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
@@ -67,8 +73,7 @@ cli
     .command('dispo_salle', 'display all free slots of a given room')
     .argument('<room_name>', 'The name of the room')
     .action(({args, logger}) => {
-        const parser = new CruParser();
-        parser.parseDirectory('data');
+        const parser = initializeParser();
 
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
         verifTaille(roomSessions.length, args.roomName, logger);
@@ -98,8 +103,7 @@ cli
     .option('-t, --time', 'Session start and end times following this format : HH:MM;HH:MM',
         {validator: cli.STRING})
     .action(({args, options, logger}) => {
-        const parser = new CruParser();
-        parser.parseDirectory('data');
+        const parser = initializeParser();
 
         const validDays = ['Lundi','lundi','Mardi','mardi','Mercredi','mercredi','Jeudi','jeudi','Vendredi','vendredi','Samedi','samedi','Dimanche','dimanche'];
         
@@ -129,13 +133,13 @@ cli
     .argument('stdt', 'The start date of the calendar', { validator: cli.STRING })
     .argument('endtn', 'The end date of the calendar', { validator: cli.STRING })
     .action(({ args, logger, options }) => {
-        const parser = new CruParser();
-        parser.parseDirectory('data'); // Directory containing the data
+        const parser = initializeParser();
 
         // Retrieve courses and user options
         const courses = args.course.length > 0 ? args.course : [];
         const startDate = args.stdt;
         const endDate = args.endtn;
+        
 
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
@@ -179,8 +183,8 @@ cli
         const fileName = path.join(downloadsDir, 'courses.ics');
 
         fs.writeFileSync(fileName, calendar.toString());
-        logger.info(`iCalendar file "${fileName}" successfully created!`);
         logger.info('If some of the courses do not appear on the calendar, it means that they were not found in the database.');
+        logger.info(`iCalendar file "${fileName}" successfully created!`);
     })
 
     // SPEC 6
@@ -197,8 +201,7 @@ cli
             process.exit(1);
         }
 
-        const parser = new CruParser();
-        parser.parseDirectory('data');
+        const parser = initializeParser();
         const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
 
         verifTaille(filteredCourses.length, null, logger);
@@ -281,11 +284,10 @@ cli
     // command to see diagram to analyse the rooms and their places
     .command('classement', 'Show diagram to see statistics of number of rooms and theirs places')
     .action(({args, logger}) => {
-        var parser = new CruParser();
-        parser.parseDirectory('data');
+        const parser = initializeParser();    
         const courses = parser.courses;
 
-         
+
         verifTaille(courses.length, null, logger);
 
         var rooms = {};
