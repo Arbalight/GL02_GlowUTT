@@ -137,16 +137,6 @@ cli
         const startDate = args.stdt;
         const endDate = args.endtn;
 
-        //Check if the courses exist
-        const allCourses = parser.courses;
-        const allCourseCodes = parser.courses.map(course => course.code);
-        const missingCourses = courses.filter(course => !allCourseCodes.includes(course));
-
-        if (missingCourses.length > 0) {
-            logger.error(`These courses were not found: ${missingCourses.join(', ')}. Export failed.`);
-            return;
-        }
-
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
 
@@ -190,6 +180,7 @@ cli
 
         fs.writeFileSync(fileName, calendar.toString());
         logger.info(`iCalendar file "${fileName}" successfully created!`);
+        logger.info('If some of the courses do not appear on the calendar, it means that they were not found in the database.');
     })
 
     // SPEC 6
