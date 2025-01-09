@@ -338,6 +338,17 @@ function removeOverlaps(timestamps) {
     return result.map(([start, end]) => [toTimestamp(start), toTimestamp(end)]);
 }
 
+function verifTaille(tailleListe, name, logger){
+    if (tailleListe === 0) {
+        if(name != null){
+        logger.error(`Not found with the given name : "${name}"`);}
+        else{
+        logger.error('No data found in the database');
+        }
+        process.exit(1);
+    }
+}
+
 
 module.exports = {
     findDataFolderFromCourseName,
@@ -348,4 +359,5 @@ module.exports = {
     findAllSessionsFromCourse,
     findAllSessionsFromDate,
     filterSessionsByCoursesAndDates,
+    verifTaille
 };

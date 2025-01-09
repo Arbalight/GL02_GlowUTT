@@ -31,7 +31,7 @@ cli
         parser.parseDirectory(dataFolder);
 
         const courseSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
-        verifTaille(courseSessions.length, args.course, logger);
+        cruTools.verifTaille(courseSessions.length, args.course, logger);
 
         console.log(`Sessions of the course "${args.course}" :`);
         courseSessions.forEach(currentSession => {
@@ -49,7 +49,7 @@ cli
 
         // get all sessions with the given room
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
-        verifTaille(roomSessions.length, args.roomName, logger);
+        cruTools.verifTaille(roomSessions.length, args.roomName, logger);
 
         // find room max capacity
         let maxCapacity = 0;
@@ -71,7 +71,7 @@ cli
         parser.parseDirectory('data');
 
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
-        verifTaille(roomSessions.length, args.roomName, logger);
+        cruTools.verifTaille(roomSessions.length, args.roomName, logger);
 
         const dates = cruTools.findDatesForRoom(roomSessions, args.roomName);
 
@@ -134,7 +134,7 @@ cli
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
 
-        verifTaille(filteredCourses.length, args.course, logger);
+        cruTools.verifTaille(filteredCourses.length, args.course, logger);
 
         // Create an iCalendar component
         const calendar = new ical.Component(['vcalendar', [], []]);
@@ -194,7 +194,7 @@ cli
         parser.parseDirectory('data');
         const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
 
-        verifTaille(filteredCourses.length, null, logger);
+        cruTools.verifTaille(filteredCourses.length, null, logger);
 
         const roomUsage = {};
         filteredCourses.forEach(course => {
@@ -279,7 +279,7 @@ cli
         const courses = parser.courses;
 
          
-        verifTaille(courses.length, null, logger);
+        cruTools.verifTaille(courses.length, null, logger);
 
         var rooms = {};
         courses.forEach(course => {
@@ -312,13 +312,3 @@ cli
 
 cli.run();
 
-function verifTaille(tailleListe, name, logger){
-    if (tailleListe === 0) {
-        if(name != null){
-        logger.error(`Not found with the given name : "${name}"`);}
-        else{
-        logger.error('No data found in the database');
-        }
-        process.exit(1);
-    }
-}
