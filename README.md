@@ -10,7 +10,7 @@ This tool is a school project which helps to manage and analyze course sessions,
 - Modified by : Eliot HUGOT, Daria AVDEEVA, Solène DERNIAUX, Sophie KHUU from the school group **Le Vent Souffle**
 - Operating Systems : Windows, Linux, Mac
 - Programming Language : Javascript, NodeJS
-- Licence : **BSD**
+- Licence : [BSD](https://github.com/Arbalight/GL02_GlowUTT/blob/main/LICENSE)
 ---
 ## Requirements / Installation
 
