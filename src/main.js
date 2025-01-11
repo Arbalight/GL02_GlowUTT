@@ -145,19 +145,20 @@ cli
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
 
-        sessions = []
+        // Select the sessions of each course to export
         console.log("Let's choose the sessions to export !\n");
         filteredCourses.forEach((course)=>{
             console.log("----------- Course " + course.code + " -----------");
             let count = 0;
 
-            // printing the available sessions
+            // Print the available sessions
             course.sessions.forEach((session)=>{
                 console.log("Session " + count + "\n");
                 console.log(session + "\n");
                 count ++;
             });
 
+            // Choose the sessions
             sessionList = []
             stopChoosing = "Yes";
             while ((stopChoosing !="n") && (stopChoosing !="N")){
