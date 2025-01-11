@@ -3,6 +3,7 @@ const cli = require("@caporal/core").default;
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const prompt = require('prompt-sync')();
 
 const CruParser = require('./CruParser.js');
 const cruTools = require('./core/cru_tools.js');
@@ -143,6 +144,36 @@ cli
 
         // Filter courses and their sessions
         const filteredCourses = cruTools.filterSessionsByCoursesAndDates(parser.courses, courses, startDate, endDate);
+
+        sessions = []
+        console.log("Let's choose the sessions to export !\n");
+        filteredCourses.forEach((course)=>{
+            console.log("----------- Course " + course.code + " -----------");
+            let count = 0;
+
+            // printing the available sessions
+            course.sessions.forEach((session)=>{
+                console.log("Session " + count + "\n");
+                console.log(session + "\n");
+                count ++;
+            });
+
+            sessionList = []
+            stopChoosing = "Yes";
+            while ((stopChoosing !="n") && (stopChoosing !="N")){
+                chosenSession = prompt("Course " + course.code + " : Enter the number of the session that you want to export (e.g. 1) : ");
+                if (course.sessions[chosenSession] != undefined){
+                    sessionList.push(course.sessions[chosenSession]);
+                }
+                else{
+                    console.log("Please enter a valid session number.");
+                }
+                stopChoosing = prompt("Do you want to choose another session? (Y/N) ");
+                console.log(stopChoosing);
+            }
+            course.sessions = sessionList;
+         }
+        );
 
         cruTools.verifTaille(filteredCourses.length, args.course, logger);
 
