@@ -359,5 +359,5 @@ module.exports = {
     findAllSessionsFromCourse,
     findAllSessionsFromDate,
     filterSessionsByCoursesAndDates,
-    verifTaille
+    checkLength
 };
