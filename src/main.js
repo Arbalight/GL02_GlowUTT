@@ -39,7 +39,7 @@ cli
         //parser.parseDirectory(dataFolder);
 
         const courseSessions = cruTools.findAllSessionsFromCourse(parser.courses, args.course);
-        cruTools.verifTaille(courseSessions.length, args.course, logger);
+        cruTools.checkLength(courseSessions.length, args.course, logger);
 
         console.log(`Sessions of the course "${args.course}" :`);
         courseSessions.forEach(currentSession => {
@@ -56,7 +56,7 @@ cli
 
         // get all sessions with the given room
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
-        cruTools.verifTaille(roomSessions.length, args.roomName, logger);
+        cruTools.checkLength(roomSessions.length, args.roomName, logger);
 
         // find room max capacity
         let maxCapacity = 0;
@@ -77,7 +77,7 @@ cli
         const parser = initializeParser();
 
         const roomSessions = cruTools.findAllSessionsFromRoom(parser.courses, args.roomName);
-        cruTools.verifTaille(roomSessions.length, args.roomName, logger);
+        cruTools.checkLength(roomSessions.length, args.roomName, logger);
 
         const dates = cruTools.findDatesForRoom(roomSessions, args.roomName);
 
@@ -175,7 +175,7 @@ cli
          }
         );
 
-        cruTools.verifTaille(filteredCourses.length, args.course, logger);
+        cruTools.checkLength(filteredCourses.length, args.course, logger);
 
         // Create an iCalendar component
         const calendar = new ical.Component(['vcalendar', [], []]);
@@ -235,7 +235,7 @@ cli
         const parser = initializeParser();
         const filteredCourses = cruTools.findAllSessionsFromDate(parser.courses, startDate, endDate);
 
-        cruTools.verifTaille(filteredCourses.length, null, logger);
+        cruTools.checkLength(filteredCourses.length, null, logger);
 
         const roomUsage = {};
         filteredCourses.forEach(course => {
@@ -319,7 +319,7 @@ cli
         const courses = parser.courses;
 
          
-        cruTools.verifTaille(courses.length, null, logger);
+        cruTools.checkLength(courses.length, null, logger);
 
         var rooms = {};
         courses.forEach(course => {

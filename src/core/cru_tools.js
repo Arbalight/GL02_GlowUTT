@@ -338,8 +338,8 @@ function removeOverlaps(timestamps) {
     return result.map(([start, end]) => [toTimestamp(start), toTimestamp(end)]);
 }
 
-function verifTaille(tailleListe, name, logger){
-    if (tailleListe === 0) {
+function checkLength(listLength, name, logger){
+    if (listLength === 0) {
         if(name != null){
         logger.error(`Not found with the given name : "${name}"`);}
         else{
