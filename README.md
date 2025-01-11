@@ -7,9 +7,10 @@ This tool is a school project which helps to manage and analyze course sessions,
 ## Project Details
 - Developed by : [Florian Lopitaux](https://github.com/florianLopitaux) / [Lucas Bonnin](https://github.com/Lucarafe) / [Nathan Ramecourt](https://github.com/NathanRmct)
 - School Group : **GlowUTT**
+- Modified by : Eliot HUGOT, Daria AVDEEVA, Solène DERNIAUX, Sophie KHUU from the school group **Le Vent Souffle**
 - Operating Systems : Windows, Linux, Mac
 - Programming Language : Javascript, NodeJS
-
+- Licence : **BSD**
 ---
 ## Requirements / Installation
 
